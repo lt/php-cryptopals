@@ -132,5 +132,4 @@ if (!debug_backtrace()) {
             break;
         }
     }
-
 }

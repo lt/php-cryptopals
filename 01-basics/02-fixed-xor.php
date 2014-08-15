@@ -44,6 +44,5 @@ if (!debug_backtrace()) {
     $homebrewSane = $homebrew === $output;
     print $homebrewSane ? "Success!\n\n" : "Failure :(\n\n";
 
-    $decodedHomebrew = base64_decode($homebrew);
     print "XORed string was:\n$homebrew\n";
 }
