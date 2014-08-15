@@ -21,12 +21,11 @@ function scoreSingleByteXORStrings(array $strings, array $weights, $penalty = 0)
 
     foreach ($strings as $pos => $string) {
         $scores = scoreSingleByteXOR($string, $weights, $penalty);
-        $score = reset($scores);
-        $topScores[$pos] = $score;
+        arsort($scores);
+        $topScores[$pos] = current($scores);
         $topChars[$pos] = key($scores);
     }
 
-    arsort($topScores);
     return [$topScores, $topChars];
 }
 
@@ -36,6 +35,7 @@ if (!debug_backtrace()) {
     $encrypted = array_map('hex2bin', file('04-data.txt', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES));
 
     list($topScores, $topChars) = scoreSingleByteXORStrings($encrypted, $englishLanguageWeights);
+    arsort($topScores);
 
     print "Highest scoring strings indexes and characters:\n";
 

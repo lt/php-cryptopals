@@ -99,7 +99,6 @@ function scoreSingleByteXOR($encrypted, array $weights, $penalty = 0)
         $scores[$i] = $score;
     }
 
-    arsort($scores);
     return $scores;
 }
 
@@ -109,6 +108,7 @@ if (!debug_backtrace()) {
     $encryptedLen = strlen($encrypted);
 
     $scores = scoreSingleByteXOR($encrypted, $englishLanguageWeights);
+    arsort($scores);
 
     print "Highest scoring character codes:\n";
 
