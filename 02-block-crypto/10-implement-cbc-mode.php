@@ -53,7 +53,7 @@ if (!debug_backtrace()) {
 
     $decrypted = decryptAES128CBC($encrypted, $key);
     $homebrewEncrypted = encryptAES128CBC($decrypted, $key);
-#
+
     print "Sanity check:\n";
     $sanity = $encrypted === $homebrewEncrypted;
     print $sanity ? "Success!\n\n" : "Failure :(\n\n";

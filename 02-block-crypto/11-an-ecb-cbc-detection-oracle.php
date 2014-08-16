@@ -1,6 +1,8 @@
 <?php
 
 /*
+ * http://cryptopals.com/sets/2/challenges/11/
+ *
  * An ECB/CBC detection oracle
  *
  * Now that you have ECB and CBC working:
