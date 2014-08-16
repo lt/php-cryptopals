@@ -64,15 +64,14 @@ function detectBlockSize()
 
 function buildDictionary($prefix, $key, $blockSize)
 {
-    $dict = [];
+    $allInOneGo = $prefix . implode($prefix, range("\x00", "\xff"));
 
-    for ($i = 0; $i < 256; $i++) {
-        $c = chr($i);
-        $myString = $prefix . $c;
-        $dict[substr(unknownStringThing($myString, $key), 0, $blockSize)] = $c;
-    }
-
-    return $dict;
+    return array_flip(
+        str_split(
+            substr(unknownStringThing($allInOneGo, $key), 0, $blockSize * 256),
+            $blockSize
+        )
+    );
 }
 
 function crackBlock($prefix, $key, $blockSize, $blockIndex)
@@ -85,9 +84,9 @@ function crackBlock($prefix, $key, $blockSize, $blockIndex)
         if (!isset($dict[$lookup])) {
             return $plaintext;
         }
-        $byte = $dict[$lookup];
-        $plaintext .= $byte;
-        print $byte;
+        $char = chr($dict[$lookup]);
+
+        $plaintext .= $char;
     }
     return $plaintext;
 }
@@ -109,5 +108,6 @@ if (!debug_backtrace()) {
     $lastBlock = str_repeat('A', $blockSize);
     for ($i = 0; $i < $blocksToCrack; $i++) {
         $lastBlock = crackBlock($lastBlock, $key, $blockSize, $i);
+        print $lastBlock;
     }
 }
