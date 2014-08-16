@@ -28,7 +28,7 @@ function encryptAES128CBC($data, $key, $iv = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0")
     $blocks = [];
     for ($i = 0; $i < $dataLen; $i += 16) {
         $block = substr($data, $i, 16) ^ $iv;
-        $iv = _encryptAES128ECB($block, $key);
+        $iv = encryptAES128ECB($block, $key);
         $blocks[] = $iv;
     }
     return implode($blocks);
@@ -40,7 +40,7 @@ function decryptAES128CBC($data, $key, $iv = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0")
     $blocks = [];
     for ($i = 0; $i < $dataLen; $i += 16) {
         $block = substr($data, $i, 16);
-        $blocks[] = $iv ^ _decryptAES128ECB($block, $key);
+        $blocks[] = $iv ^ decryptAES128ECB($block, $key);
         $iv = $block;
     }
     return implode($blocks);
