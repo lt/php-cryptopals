@@ -55,28 +55,29 @@ else {
 
 function encryptAES128ECB($data, $key)
 {
-    $dataLen = strlen($data);
-    $blocks = [];
+    $blocks = str_split($data, 16);
+    $numBlocks = count($blocks);
 
-    for ($i = 0; $i < $dataLen; $i += 16) {
-        $block = substr($data, $i, 16);
-        if (strlen($block) < 16) {
-            $block = addPKCS7Padding($block, 16);
-        }
-        $blocks[] = _encryptAES128ECB($block, $key);
+    if (strlen($blocks[$numBlocks - 1]) === 16) {
+        $blocks[] = addPKCS7Padding('', 16);
+    }
+    else {
+        $blocks[$numBlocks - 1] = addPKCS7Padding($blocks[$numBlocks - 1], 16);
+    }
+
+    foreach ($blocks as &$block) {
+        $block = _encryptAES128ECB($block, $key);
     }
 
     return implode($blocks);
 }
 
-function decryptAES128ECB($data, $key)
+function decryptAES128ECB($data, $key, $strictPadding = false)
 {
-    $dataLen = strlen($data);
-    $blocks = [];
+    $blocks = str_split($data, 16);
 
-    for ($i = 0; $i < $dataLen; $i += 16) {
-        $block = substr($data, $i, 16);
-        $blocks[] = _decryptAES128ECB($block, $key);
+    foreach ($blocks as &$block) {
+        $block = _decryptAES128ECB($block, $key);
     }
 
     $plaintext = implode($blocks);
@@ -85,6 +86,9 @@ function decryptAES128ECB($data, $key)
         return removePKCS7Padding($plaintext);
     }
     catch (Exception $e) {
+        if ($strictPadding) {
+            throw $e;
+        }
         return $plaintext;
     }
 }

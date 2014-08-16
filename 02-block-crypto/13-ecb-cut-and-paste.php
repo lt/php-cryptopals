@@ -80,7 +80,7 @@ for ($i = 2; $i <= 16; $i++) {
         break;
     }
 }
-$padToChopRole = $i + 3;
+$padToChopRole = $i + 4;
 
 print "Padding to chop role: $padToChopRole\n";
 print "Padding to align admin: $padToAlignEmail\n";

@@ -24,26 +24,45 @@ require_once '../01-basics/07-aes-in-ecb-mode.php';
 
 function encryptAES128CBC($data, $key, $iv = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0")
 {
-    $dataLen = strlen($data);
-    $blocks = [];
-    for ($i = 0; $i < $dataLen; $i += 16) {
-        $block = substr($data, $i, 16) ^ $iv;
-        $iv = encryptAES128ECB($block, $key);
-        $blocks[] = $iv;
+    $blocks = str_split($data, 16);
+    $numBlocks = count($blocks);
+
+    if (strlen($blocks[$numBlocks - 1]) === 16) {
+        $blocks[] = addPKCS7Padding('', 16);
     }
+    else {
+        $blocks[$numBlocks - 1] = addPKCS7Padding($blocks[$numBlocks - 1], 16);
+    }
+
+    foreach ($blocks as &$block) {
+        $block = _encryptAES128ECB($block ^ $iv, $key);
+        $iv = $block;
+    }
+
     return implode($blocks);
 }
 
-function decryptAES128CBC($data, $key, $iv = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0")
+function decryptAES128CBC($data, $key, $iv = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", $strictPadding = false)
 {
-    $dataLen = strlen($data);
-    $blocks = [];
-    for ($i = 0; $i < $dataLen; $i += 16) {
-        $block = substr($data, $i, 16);
-        $blocks[] = $iv ^ decryptAES128ECB($block, $key);
-        $iv = $block;
+    $blocks = str_split($data, 16);
+
+    foreach ($blocks as &$block) {
+        $nextIV = $block;
+        $block = $iv ^ _decryptAES128ECB($block, $key);
+        $iv = $nextIV;
     }
-    return implode($blocks);
+
+    $plaintext = implode($blocks);
+
+    try {
+        return removePKCS7Padding($plaintext);
+    }
+    catch (Exception $e) {
+        if ($strictPadding) {
+            throw $e;
+        }
+        return $plaintext;
+    }
 }
 
 // don't output if we're included into another script.
@@ -53,9 +72,10 @@ if (!debug_backtrace()) {
 
     $decrypted = decryptAES128CBC($encrypted, $key);
     $homebrewEncrypted = encryptAES128CBC($decrypted, $key);
+    $homebrewDecrypted = decryptAES128CBC($homebrewEncrypted, $key);
 
     print "Sanity check:\n";
-    $sanity = $encrypted === $homebrewEncrypted;
+    $sanity = $decrypted === $homebrewDecrypted;
     print $sanity ? "Success!\n\n" : "Failure :(\n\n";
 
     print "Decrypted data:\n";
