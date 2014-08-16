@@ -18,23 +18,23 @@
  */
 
 if (extension_loaded('openssl')) {
-    function encryptAES128ECB($data, $key)
+    function _encryptAES128ECB($data, $key)
     {
         return openssl_encrypt($data, 'aes-128-ecb', $key, OPENSSL_RAW_DATA | OPENSSL_ZERO_PADDING);
     }
 
-    function decryptAES128ECB($data, $key)
+    function _decryptAES128ECB($data, $key)
     {
         return openssl_decrypt($data, 'aes-128-ecb', $key, OPENSSL_RAW_DATA | OPENSSL_ZERO_PADDING);
     }
 }
 else if (extension_loaded('mcrypt')) {
-    function encryptAES128ECB($data, $key)
+    function _encryptAES128ECB($data, $key)
     {
         return mcrypt_encrypt('rijndael-128', $key, $data, 'ecb');
     }
 
-    function decryptAES128ECB($data, $key)
+    function _decryptAES128ECB($data, $key)
     {
         return mcrypt_decrypt('rijndael-128', $key, $data, 'ecb');
     }
@@ -50,24 +50,24 @@ else {
  * Lets go!
  */
 
-function encryptAES128ECBOneBlockAtATime($data, $key)
-{
-    $dataLen = strlen($data);
-    $blocks = [];
-    for ($i = 0; $i < $dataLen; $i += 16) {
-        $block = substr($data, $i * 16, 16);
-        $blocks[] = encryptAES128ECB($block, $key);
-    }
-    return implode($blocks);
-}
-
-function decryptAES128ECBOneBlockAtATime($data, $key)
+function encryptAES128ECB($data, $key)
 {
     $dataLen = strlen($data);
     $blocks = [];
     for ($i = 0; $i < $dataLen; $i += 16) {
         $block = substr($data, $i, 16);
-        $blocks[] = decryptAES128ECB($block, $key);
+        $blocks[] = _encryptAES128ECB($block, $key);
+    }
+    return implode($blocks);
+}
+
+function decryptAES128ECB($data, $key)
+{
+    $dataLen = strlen($data);
+    $blocks = [];
+    for ($i = 0; $i < $dataLen; $i += 16) {
+        $block = substr($data, $i, 16);
+        $blocks[] = _decryptAES128ECB($block, $key);
     }
     return implode($blocks);
 }
@@ -77,12 +77,16 @@ if (!debug_backtrace()) {
     $encrypted = base64_decode(file_get_contents('07-data.txt'));
     $key = 'YELLOW SUBMARINE';
 
-    $decryptedSane = decryptAES128ECB($encrypted, $key);
-
-    $decrypted = decryptAES128ECBOneBlockAtATime($encrypted, $key);
+    $decryptedSane = _decryptAES128ECB($encrypted, $key);
+    $decrypted = decryptAES128ECB($encrypted, $key);
 
     print "Sanity check:\n";
     $sanity = $decryptedSane === $decrypted;
+    print $sanity ? "Success!\n\n" : "Failure :(\n\n";
+
+    print "Homebrew sanity check:\n";
+    $test = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
+    $sanity = decryptAES128ECB(encryptAES128ECB($test, $key), $key) === $test;
     print $sanity ? "Success!\n\n" : "Failure :(\n\n";
 
     print "Decrypted data:\n";

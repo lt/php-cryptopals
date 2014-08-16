@@ -29,7 +29,6 @@ function scoreSingleByteXORStrings(array $strings, array $weights, $penalty = 0)
     return [$topScores, $topChars];
 }
 
-
 // don't output if we're included into another script.
 if (!debug_backtrace()) {
     $encrypted = array_map('hex2bin', file('04-data.txt', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES));
@@ -62,4 +61,3 @@ if (!debug_backtrace()) {
         }
     }
 }
-
