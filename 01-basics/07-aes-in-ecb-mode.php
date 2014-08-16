@@ -18,51 +18,29 @@
  */
 
 if (extension_loaded('openssl')) {
-    function encryptSingleBlockAES128ECB($data, $key)
+    function encryptAES128ECB($data, $key)
     {
         return openssl_encrypt($data, 'aes-128-ecb', $key, OPENSSL_RAW_DATA | OPENSSL_ZERO_PADDING);
     }
 
-    function decryptSingleBlockAES128ECB($data, $key)
+    function decryptAES128ECB($data, $key)
     {
         return openssl_decrypt($data, 'aes-128-ecb', $key, OPENSSL_RAW_DATA | OPENSSL_ZERO_PADDING);
     }
 }
 else if (extension_loaded('mcrypt')) {
-    function encryptSingleBlockAES128ECB($data, $key)
+    function encryptAES128ECB($data, $key)
     {
         return mcrypt_encrypt('rijndael-128', $key, $data, 'ecb');
     }
 
-    function decryptSingleBlockAES128ECB($data, $key)
+    function decryptAES128ECB($data, $key)
     {
         return mcrypt_decrypt('rijndael-128', $key, $data, 'ecb');
     }
 }
 else {
     throw new RuntimeException('You need either the OpenSSL or MCrypt extensions installed for this one');
-}
-
-function encryptAES128ECB($data, $key)
-{
-    $dataLen = strlen($data);
-    $blocks = [];
-    for ($i = 0; $i < $dataLen; $i += 16) {
-        $block = substr($data, $i * 16, 16);
-        $blocks[] = encryptSingleBlockAES128ECB($block, $key);
-    }
-    return implode($blocks);
-}
-
-function decryptAES128ECB($data, $key)
-{
-    $dataLen = strlen($data);
-    $blocks = [];
-    for ($i = 0; $i < $dataLen; $i += 16) {
-        $block = substr($data, $i, 16);
-        $blocks[] = decryptSingleBlockAES128ECB($block, $key);
-    }
-    return implode($blocks);
 }
 
 /*
@@ -72,19 +50,36 @@ function decryptAES128ECB($data, $key)
  * Lets go!
  */
 
+function encryptAES128ECBOneBlockAtATime($data, $key)
+{
+    $dataLen = strlen($data);
+    $blocks = [];
+    for ($i = 0; $i < $dataLen; $i += 16) {
+        $block = substr($data, $i * 16, 16);
+        $blocks[] = encryptAES128ECB($block, $key);
+    }
+    return implode($blocks);
+}
+
+function decryptAES128ECBOneBlockAtATime($data, $key)
+{
+    $dataLen = strlen($data);
+    $blocks = [];
+    for ($i = 0; $i < $dataLen; $i += 16) {
+        $block = substr($data, $i, 16);
+        $blocks[] = decryptAES128ECB($block, $key);
+    }
+    return implode($blocks);
+}
+
 // don't output if we're included into another script.
 if (!debug_backtrace()) {
     $encrypted = base64_decode(file_get_contents('07-data.txt'));
     $key = 'YELLOW SUBMARINE';
 
-    if (extension_loaded('openssl')) {
-        $decryptedSane = openssl_decrypt($encrypted, 'aes-128-ecb', $key, OPENSSL_RAW_DATA | OPENSSL_ZERO_PADDING);
-    }
-    else if (extension_loaded('mcrypt')) {
-        $decryptedSane = mcrypt_decrypt('rijndael-128', $key, $encrypted, 'ecb');
-    }
+    $decryptedSane = decryptAES128ECB($encrypted, $key);
 
-    $decrypted = decryptAES128ECB($encrypted, $key);
+    $decrypted = decryptAES128ECBOneBlockAtATime($encrypted, $key);
 
     print "Sanity check:\n";
     $sanity = $decryptedSane === $decrypted;
