@@ -22,22 +22,7 @@
  * Detect the block cipher mode the function is using each time. You should end up with a piece of code that, pointed at a block box that might be encrypting ECB or CBC, tells you which one is happening.
  */
 
-if (extension_loaded('openssl')) {
-    function getRandomBytes($count)
-    {
-        return openssl_random_pseudo_bytes($count);
-    }
-}
-else if (extension_loaded('mcrypt')) {
-    function getRandomBytes($count)
-    {
-        return mcrypt_create_iv($count, MCRYPT_DEV_URANDOM);
-    }
-}
-else {
-    throw new RuntimeException('You need either the OpenSSL or MCrypt extensions installed for this one');
-}
-
+require_once '../utils/random-bytes.php';
 require_once '../01-basics/07-aes-in-ecb-mode.php';
 require_once '10-implement-cbc-mode.php';
 
