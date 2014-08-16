@@ -82,8 +82,8 @@ function crackBlock($prefix, $key, $blockSize, $blockIndex)
         $prefix = substr($prefix, 1);
         $dict = buildDictionary($prefix . $plaintext, $key, $blockSize);
         $lookup = substr(unknownStringThing($prefix, $key), $blockIndex * $blockSize, $blockSize);
-        if ($lookup === false) {
-            break;
+        if (!isset($dict[$lookup])) {
+            return $plaintext;
         }
         $byte = $dict[$lookup];
         $plaintext .= $byte;
@@ -103,7 +103,7 @@ if (!debug_backtrace()) {
     print "ECB mode:\n";
     print $ecb ? "Yes\n\n" : "No...\n\n";
 
-    $blocksToCrack = (strlen(unknownStringThing('', $key)) / $blockSize) + 1;
+    $blocksToCrack = strlen(unknownStringThing('', $key)) / $blockSize;
     print "$blocksToCrack blocks to crack\n\n";
 
     $lastBlock = str_repeat('A', $blockSize);

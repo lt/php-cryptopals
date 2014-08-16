@@ -28,6 +28,11 @@ function validPKCS7Padding($data)
     $dataLen = strlen($data);
     $padChar = $data[$dataLen - 1];
     $padLen = ord($padChar);
+
+    if ($padLen > $dataLen || $padLen === 0) {
+        throw new Exception('Invalid padding');
+    }
+
     for ($i = $dataLen - $padLen; $i < $dataLen; $i++) {
         if ($data[$i] !== $padChar) {
             throw new Exception('Invalid padding');

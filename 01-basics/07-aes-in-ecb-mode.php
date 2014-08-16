@@ -17,6 +17,9 @@
  * You can obviously decrypt this using the OpenSSL command-line tool, but we're having you get ECB working in code for a reason. You'll need it a lot later on, and not just for attacking ECB.
  */
 
+require_once '../02-block-crypto/09-implement-pkcs7-padding.php';
+require_once '../02-block-crypto/15-pkcs7-padding-validation.php';
+
 if (extension_loaded('openssl')) {
     function _encryptAES128ECB($data, $key)
     {
@@ -54,10 +57,15 @@ function encryptAES128ECB($data, $key)
 {
     $dataLen = strlen($data);
     $blocks = [];
+
     for ($i = 0; $i < $dataLen; $i += 16) {
         $block = substr($data, $i, 16);
+        if (strlen($block) < 16) {
+            $block = addPKCS7Padding($block, 16);
+        }
         $blocks[] = _encryptAES128ECB($block, $key);
     }
+
     return implode($blocks);
 }
 
@@ -65,11 +73,20 @@ function decryptAES128ECB($data, $key)
 {
     $dataLen = strlen($data);
     $blocks = [];
+
     for ($i = 0; $i < $dataLen; $i += 16) {
         $block = substr($data, $i, 16);
         $blocks[] = _decryptAES128ECB($block, $key);
     }
-    return implode($blocks);
+
+    $plaintext = implode($blocks);
+
+    try {
+        return removePKCS7Padding($plaintext);
+    }
+    catch (Exception $e) {
+        return $plaintext;
+    }
 }
 
 // don't output if we're included into another script.
@@ -77,7 +94,7 @@ if (!debug_backtrace()) {
     $encrypted = base64_decode(file_get_contents('07-data.txt'));
     $key = 'YELLOW SUBMARINE';
 
-    $decryptedSane = _decryptAES128ECB($encrypted, $key);
+    $decryptedSane = removePKCS7Padding(_decryptAES128ECB($encrypted, $key));
     $decrypted = decryptAES128ECB($encrypted, $key);
 
     print "Sanity check:\n";
