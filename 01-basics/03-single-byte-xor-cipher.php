@@ -48,6 +48,11 @@ $englishLanguageWeights = [
     'z' => 0.074,
 ];
 
+// lets not penalise upper case letters
+foreach ($englishLanguageWeights as $k => $v) {
+    $englishLanguageWeights[strtoupper($k)] = $v;
+}
+
 /*
  * more from https://en.wikipedia.org/wiki/Letter_frequency
  *
