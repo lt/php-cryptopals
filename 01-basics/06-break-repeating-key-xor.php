@@ -91,8 +91,9 @@ function scoreHammedKeySizeRange($data, $lowKeySize, $highKeySize, $sampleLimit 
 
 function transposeBlocks(array $blocks)
 {
+    $blockLens = array_map('strlen', $blocks);
     $blocks = array_map('str_split', $blocks);
-    $iterations = count($blocks[0]);
+    $iterations = max($blockLens);
     $newBlocks = [];
 
     for ($i = 0; $i < $iterations; $i++) {
@@ -112,7 +113,7 @@ if (!debug_backtrace()) {
     print $sanity ? "Success!\n\n" : "Failure :(\n\n";
 
     print "This will take a while. Hold on!\n\n";
-    $scores = scoreHammedKeySizeRange($data, 2, 40, 1000); // 10k sample limit to reduce time taken
+    $scores = scoreHammedKeySizeRange($data, 2, 40, 10000); // 10k sample limit to reduce time taken
 
     print "Top scoring key sizes:\n";
     $i = 0;
