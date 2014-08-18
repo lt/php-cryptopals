@@ -16,8 +16,8 @@ if (PHP_INT_SIZE < 8) {
 
 class MT19937
 {
-    private $MT = [];
-    private $index = 624;
+    protected $MT = [];
+    protected $index = 624;
 
     function init($seed = 5489)
     {
