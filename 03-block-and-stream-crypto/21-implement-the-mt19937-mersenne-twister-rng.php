@@ -21,13 +21,14 @@ class MT19937
 
     function init($seed = 5489)
     {
-        $MT[0] = $seed;
+        $MT = [$seed];
 
         for ($i = 0; $i < 623; $i++) {
             $MT[$i + 1] = (1812433253 * ($MT[$i] ^ ($MT[$i] >> 30)) + $i) & 0xffffffff;
         }
 
         $this->MT = $MT;
+        $this->index = 624;
     }
 
     function int32()
