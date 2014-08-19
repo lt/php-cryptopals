@@ -189,44 +189,41 @@ class SHA1
             $A = $temp;
         }
 
-        $context->messageDigest[0] = ($context->messageDigest[0] + $A) & 0xffffffff;
-        $context->messageDigest[1] = ($context->messageDigest[1] + $B) & 0xffffffff;
-        $context->messageDigest[2] = ($context->messageDigest[2] + $C) & 0xffffffff;
-        $context->messageDigest[3] = ($context->messageDigest[3] + $D) & 0xffffffff;
-        $context->messageDigest[4] = ($context->messageDigest[4] + $E) & 0xffffffff;
+
+        $context->messageDigest = [
+            ($context->messageDigest[0] + $A) & 0xffffffff,
+            ($context->messageDigest[1] + $B) & 0xffffffff,
+            ($context->messageDigest[2] + $C) & 0xffffffff,
+            ($context->messageDigest[3] + $D) & 0xffffffff,
+            ($context->messageDigest[4] + $E) & 0xffffffff
+        ];
 
         $context->messageBlockIndex = 0;
     }
 
     function pad(SHA1Context $context)
     {
+        $context->messageBlock[$context->messageBlockIndex++] = 0x80;
+
         if ($context->messageBlockIndex > 55) {
-            $context->messageBlock[$context->messageBlockIndex++] = 0x80;
             while ($context->messageBlockIndex < 64) {
                 $context->messageBlock[$context->messageBlockIndex++] = 0;
             }
             $this->processMessageBlock($context);
-            while ($context->messageBlockIndex < 56)
-            {
-                $context->messageBlock[$context->messageBlockIndex++] = 0;
-            }
         }
-        else {
-            $context->messageBlock[$context->messageBlockIndex++] = 0x80;
-            while ($context->messageBlockIndex < 56)
-            {
-                $context->messageBlock[$context->messageBlockIndex++] = 0;
-            }
+        while ($context->messageBlockIndex < 56)
+        {
+            $context->messageBlock[$context->messageBlockIndex++] = 0;
         }
 
-        $context->messageBlock[56] = ($context->lengthHigh >> 24) & 0xFF;
-        $context->messageBlock[57] = ($context->lengthHigh >> 16) & 0xFF;
-        $context->messageBlock[58] = ($context->lengthHigh >> 8) & 0xFF;
-        $context->messageBlock[59] = ($context->lengthHigh) & 0xFF;
-        $context->messageBlock[60] = ($context->lengthLow >> 24) & 0xFF;
-        $context->messageBlock[61] = ($context->lengthLow >> 16) & 0xFF;
-        $context->messageBlock[62] = ($context->lengthLow >> 8) & 0xFF;
-        $context->messageBlock[63] = ($context->lengthLow) & 0xFF;
+        $context->messageBlock[56] = ($context->lengthHigh >> 24) & 0xff;
+        $context->messageBlock[57] = ($context->lengthHigh >> 16) & 0xff;
+        $context->messageBlock[58] = ($context->lengthHigh >> 8) & 0xff;
+        $context->messageBlock[59] = ($context->lengthHigh) & 0xff;
+        $context->messageBlock[60] = ($context->lengthLow >> 24) & 0xff;
+        $context->messageBlock[61] = ($context->lengthLow >> 16) & 0xff;
+        $context->messageBlock[62] = ($context->lengthLow >> 8) & 0xff;
+        $context->messageBlock[63] = ($context->lengthLow) & 0xff;
 
         $this->processMessageBlock($context);
     }
