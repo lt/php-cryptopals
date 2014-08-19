@@ -40,6 +40,10 @@
  * Most modern cryptography relies on CTR mode to adapt block ciphers into stream ciphers, because most of what we want to encrypt is better described as a stream than as a sequence of blocks. Daniel Bernstein once quipped to Phil Rogaway that good cryptosystems don't need the "decrypt" transforms. Constructions like CTR are what he was talking about.
  */
 
+if (PHP_INT_SIZE < 8) {
+    throw new Exception('64 bit PHP required!');
+}
+
 // pull in previous functions to do single blocks of AES
 require_once '../01-basics/07-aes-in-ecb-mode.php';
 
@@ -47,20 +51,17 @@ function encryptAES128CTR($data, $key, $nonce = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
 {
     $blocks = str_split($data, 16);
 
-    $counter = unpack('v8', $nonce);
+    $counter = unpack('V4', $nonce);
 
     foreach ($blocks as &$block) {
         $block ^= _encryptAES128ECB(
-            pack('v8', $counter[1], $counter[2], $counter[3], $counter[4],
-                $counter[5], $counter[6], $counter[7], $counter[8]),
+            pack('V4', $counter[1], $counter[2], $counter[3], $counter[4]),
             $key
         );
 
-        // Because we cant even have unsigned 32 bit numbers in PHP...
-        $counter[5] = ($carry = $counter[5] + 1) & 0xffff;
-        $counter[6] = ($carry = ($carry >> 16) + $counter[6]) & 0xffff;
-        $counter[7] = ($carry = ($carry >> 16) + $counter[7]) & 0xffff;
-        $counter[8] = (($carry >> 16) + $counter[8]) & 0xffff;
+        // Because we don't have unsigned 64 bit numbers in PHP...
+        $counter[3] = ($carry = $counter[3] + 1) & 0xffffffff;
+        $counter[4] = (($carry >> 32) + $counter[4]) & 0xffffffff;
     }
 
     return implode($blocks);
