@@ -189,7 +189,6 @@ class SHA1
             $A = $temp;
         }
 
-
         $context->messageDigest = [
             ($context->messageDigest[0] + $A) & 0xffffffff,
             ($context->messageDigest[1] + $B) & 0xffffffff,
@@ -237,12 +236,6 @@ function sha1KeyedMAC($key, $message)
     $s->reset($c);
     $s->input($c, array_map('ord', str_split($key . $message)));
     $s->result($c);
-
-    $result = '';
-
-    for ($i = 0; $i < 5; $i++) {
-        $result .= dechex($c->messageDigest[$i]);
-    }
 
     return pack('N5', $c->messageDigest[0], $c->messageDigest[1], $c->messageDigest[2], $c->messageDigest[3], $c->messageDigest[4]);
 }
