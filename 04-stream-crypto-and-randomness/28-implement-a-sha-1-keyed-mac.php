@@ -81,7 +81,7 @@ class SHA1
         return 1;
     }
 
-    function input(SHA1Context $context, array $message)
+    function input(SHA1Context $context, $message)
     {
         if (!$message) {
             return;
@@ -92,24 +92,34 @@ class SHA1
             return;
         }
 
-        foreach ($message as $octet) {
-            $context->messageBlock[$context->messageBlockIndex++] = $octet & 0xff;
+        $messageLen = strlen($message);
+        $offset = 0;
 
-            $context->lengthLow += 8;
-            $context->lengthLow &= 0xffffffff;
+        while ($offset < $messageLen) {
+            $chunkLen = min(1024, $messageLen - $offset);
+            $octets = array_values(unpack("@$offset/C$chunkLen", $message));
 
-            if ($context->lengthLow === 0) {
-                $context->lengthHigh++;
-                $context->lengthHigh &= 0xffffffff;
+            foreach ($octets as $octet) {
+                $context->messageBlock[$context->messageBlockIndex++] = $octet;
 
-                if ($context->lengthHigh === 0) {
-                    $context->corrupted = 1;
+                $context->lengthLow += 8;
+                $context->lengthLow &= 0xffffffff;
+
+                if ($context->lengthLow === 0) {
+                    $context->lengthHigh++;
+                    $context->lengthHigh &= 0xffffffff;
+
+                    if ($context->lengthHigh === 0) {
+                        $context->corrupted = 1;
+                    }
+                }
+
+                if ($context->messageBlockIndex === 64) {
+                    $this->processMessageBlock($context);
                 }
             }
 
-            if ($context->messageBlockIndex === 64) {
-                $this->processMessageBlock($context);
-            }
+            $offset += 1024;
         }
     }
 
@@ -234,7 +244,7 @@ function sha1KeyedMAC($key, $message)
 
     $s = new SHA1();
     $s->reset($c);
-    $s->input($c, array_map('ord', str_split($key . $message)));
+    $s->input($c, $key . $message);
     $s->result($c);
 
     return pack('N5', $c->messageDigest[0], $c->messageDigest[1], $c->messageDigest[2], $c->messageDigest[3], $c->messageDigest[4]);
