@@ -66,6 +66,16 @@ class DH
     {
         return gmp_powm($public, $private, $this->p);
     }
+
+    function p()
+    {
+        return gmp_strval($this->p, 16);
+    }
+
+    function g()
+    {
+        return gmp_strval($this->g, 16);
+    }
 }
 
 // don't output if we're included into another script.
