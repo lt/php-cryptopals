@@ -41,21 +41,50 @@ if (!extension_loaded('gmp')) {
     throw new Exception('GMP needed for this one!');
 }
 
-$p = gmp_init('ffffffffffffffffc90fdaa22168c234c4c6628b80dc1cd129024e088a67cc74020bbea63b139b22514a08798e3404ddef9519b3cd3a431b302b0a6df25f14374fe1356d6d51c245e485b576625e7ec6f44c42e9a637ed6b0bff5cb6f406b7edee386bfb5a899fa5ae9f24117c4b1fe649286651ece45b3dc2007cb8a163bf0598da48361c55d39a69163fa8fd24cf5f83655d23dca3ad961c62f356208552bb9ed529077096966d670c354e4abc9804f1746c08ca237327ffffffffffffffff', 16);
-$g = gmp_init(2);
+class DH
+{
+    private $p;
+    private $g;
 
-$a = gmp_random(50);
-$b = gmp_random(50);
+    function __construct()
+    {
+        $this->p = gmp_init('ffffffffffffffffc90fdaa22168c234c4c6628b80dc1cd129024e088a67cc74020bbea63b139b22514a08798e3404ddef9519b3cd3a431b302b0a6df25f14374fe1356d6d51c245e485b576625e7ec6f44c42e9a637ed6b0bff5cb6f406b7edee386bfb5a899fa5ae9f24117c4b1fe649286651ece45b3dc2007cb8a163bf0598da48361c55d39a69163fa8fd24cf5f83655d23dca3ad961c62f356208552bb9ed529077096966d670c354e4abc9804f1746c08ca237327ffffffffffffffff', 16);
+        $this->g = gmp_init(2);
+    }
 
-$A = gmp_powm($g, $a, $p);
-$B = gmp_powm($g, $b, $p);
+    function generatePrivate()
+    {
+        return gmp_random(60);
+    }
 
-$s = gmp_powm($B, $a, $p);
-$s2 = gmp_powm($A, $b, $p);
+    function generatePublic($private)
+    {
+        return gmp_powm($this->g, $private, $this->p);
+    }
+
+    function generateShared($private, $public)
+    {
+        return gmp_powm($public, $private, $this->p);
+    }
+}
+
+// don't output if we're included into another script.
+if (!debug_backtrace()) {
+    $dh = new DH;
+
+    $a = $dh->generatePrivate();
+    $b = $dh->generatePrivate();
+
+    $A = $dh->generatePublic($a);
+    $B = $dh->generatePublic($b);
+
+    $s = $dh->generateShared($a, $B);
+    $s2 = $dh->generateShared($b, $A);
 
 
-print "A and B shared secrets match:\n";
-print gmp_cmp($s, $s2) === 0 ? "Yes!\n\n" : "No :(\n\n";
+    print "A and B shared secrets match:\n";
+    print gmp_cmp($s, $s2) === 0 ? "Yes!\n\n" : "No :(\n\n";
 
-print "Shared secret:\n";
-print gmp_strval($s, 16) . "\n\n";
+    print "Shared secret:\n";
+    print gmp_strval($s, 16) . "\n\n";
+}
