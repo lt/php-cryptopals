@@ -72,8 +72,11 @@ class DH
         return gmp_strval($this->p, 16);
     }
 
-    function g()
+    function g($val = null)
     {
+        if (is_string($val)) {
+            $this->g = gmp_init($val, 16);
+        }
         return gmp_strval($this->g, 16);
     }
 }
