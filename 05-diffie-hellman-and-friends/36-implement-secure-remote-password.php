@@ -48,97 +48,123 @@
  * This is basically Diffie Hellman with a tweak of mixing the password into the public keys. The server also takes an extra step to avoid storing an easily crackable password-equivalent.
  */
 
-/*
-// C & S have agreed:
-$N = gmp_init('ffffffffffffffffc90fdaa22168c234c4c6628b80dc1cd129024e088a67cc74020bbea63b139b22514a08798e3404ddef9519b3cd3a431b302b0a6df25f14374fe1356d6d51c245e485b576625e7ec6f44c42e9a637ed6b0bff5cb6f406b7edee386bfb5a899fa5ae9f24117c4b1fe649286651ece45b3dc2007cb8a163bf0598da48361c55d39a69163fa8fd24cf5f83655d23dca3ad961c62f356208552bb9ed529077096966d670c354e4abc9804f1746c08ca237327ffffffffffffffff', 16);
-$g = '2';
-$k = '3';
-$I = 'email';
-$P = 'password';
+class SRP
+{
+    protected $N;
+    protected $g = '2';
+    protected $k = '3';
 
-// S
-$salt = gmp_random();
-$xH = hash('sha256', gmp_strval($salt) . $P);
-$x = gmp_init($xH, 16);
-$v = gmp_powm($g, $x, $N);
+    protected $I;
+    protected $P;
 
-// C -> S
-$a = gmp_random();
-$A = gmp_powm($g, $a, $N);
+    protected $salt;
+    protected $x;
+    protected $A;
+    protected $B;
+    protected $u;
+    protected $S;
 
-// S -> C
-$b = gmp_random();
-$B = gmp_powm(gmp_add(gmp_mul($k, $v), gmp_powm($g, $b, $N)), '1', $N);
+    function __construct($I, $P)
+    {
+        $this->N = gmp_init('ffffffffffffffffc90fdaa22168c234c4c6628b80dc1cd129024e088a67cc74020bbea63b139b22514a08798e3404ddef9519b3cd3a431b302b0a6df25f14374fe1356d6d51c245e485b576625e7ec6f44c42e9a637ed6b0bff5cb6f406b7edee386bfb5a899fa5ae9f24117c4b1fe649286651ece45b3dc2007cb8a163bf0598da48361c55d39a69163fa8fd24cf5f83655d23dca3ad961c62f356208552bb9ed529077096966d670c354e4abc9804f1746c08ca237327ffffffffffffffff', 16);
+        $this->I = $I;
+        $this->P = $P;
+    }
 
-// S and C
-$uH = hash('sha256', gmp_strval($A) . gmp_strval($B));
-$u = gmp_init($uH, 16);
+    function getK()
+    {
+        return hash('sha256', gmp_strval($this->S));
+    }
 
-// C
-$xH = hash('sha256', gmp_strval($salt) . $P);
-$x = gmp_init($xH, 16);
-$Sc = gmp_powm(
-        gmp_mul(gmp_sub($B, $k), gmp_powm($g, $x, $N)),
-        gmp_add($a, gmp_mul($u, $x)),
-        $N
-    );
-$Kc = hash('sha256', gmp_strval($Sc));
+    function getProof()
+    {
+        return hash_hmac('sha256', $this->getK(), $this->salt);
+    }
+}
 
-// S
-$Ss = gmp_powm(gmp_mul($A, gmp_powm($v, $u, $N)), $b, $N);
-$Ks = hash('sha256', gmp_strval($Ss));
+class SRPServer extends SRP
+{
+    private $v;
+    private $b;
 
-// C -> S
-$proofC = hash_hmac('sha256', $Kc, gmp_strval($salt));
+    function __construct($I, $P)
+    {
+        parent::__construct($I, $P);
 
-// S -> C
-$proofS = hash_hmac('sha256', $Ks, gmp_strval($salt));
+        $this->salt = gmp_strval(gmp_random(), 16);
+        $this->x = gmp_init(hash('sha256', $this->salt . $P), 16);
+        $this->v = gmp_powm($this->g, $this->x, $this->N);
 
-var_dump(gmp_strval($Sc), gmp_strval($Ss));
+        $this->b = gmp_random();
+        $this->B = gmp_strval(gmp_powm(gmp_add(gmp_mul($this->k, $this->v), gmp_powm($this->g, $this->b, $this->N)), '1', $this->N), 16);
+    }
 
-print $proofS === $proofC ? "OK\n\n" : "Not OK :(\n\n";
-*/
+    function getSalt()
+    {
+        return $this->salt;
+    }
 
-$N = gmp_init('ffffffffffffffffc90fdaa22168c234c4c6628b80dc1cd129024e088a67cc74020bbea63b139b22514a08798e3404ddef9519b3cd3a431b302b0a6df25f14374fe1356d6d51c245e485b576625e7ec6f44c42e9a637ed6b0bff5cb6f406b7edee386bfb5a899fa5ae9f24117c4b1fe649286651ece45b3dc2007cb8a163bf0598da48361c55d39a69163fa8fd24cf5f83655d23dca3ad961c62f356208552bb9ed529077096966d670c354e4abc9804f1746c08ca237327ffffffffffffffff', 16);
-$g = '2';
-$k = '3';
-$I = 'email';
-$P = 'password';
+    function setA($A)
+    {
+        $this->A = gmp_init($A, 16);
+        $this->u = gmp_init(hash('sha256', $A . $this->B), 16);
 
-// S
-$salt = gmp_init('c074c31f47082b39', 16);
-$xH = hash('sha256', gmp_strval($salt) . $P);
-$x = gmp_init($xH, 16);
-$v = gmp_powm($g, $x, $N);
+        $this->S = gmp_powm(gmp_mul($this->A, gmp_powm($this->v, $this->u, $this->N)), $this->b, $this->N);
+    }
 
-// C -> S
-$a = gmp_random();
-$A = gmp_powm($g, $a, $N);
+    function getB()
+    {
+        return $this->B;
+    }
+}
 
-// S -> C
-$b = gmp_random();
-$B = gmp_powm(gmp_add(gmp_mul($k, $v), gmp_powm($g, $b, $N)), '1', $N);
+class SRPClient extends SRP
+{
+    private $a;
 
-// S and C
-$uH = hash('sha256', gmp_strval($A) . gmp_strval($B));
-$u = gmp_init($uH, 16);
+    function __construct($I, $P)
+    {
+        parent::__construct($I, $P);
 
-// C
-$Sc = gmp_powm(
-    gmp_sub($B, gmp_mul($k, gmp_powm($g, $x, $N))),
-    gmp_add($a, gmp_mul($u, $x)),
-    $N
-);
-$Kc = hash('sha256', gmp_strval($Sc));
+        $this->a = gmp_random();
+        $this->A = gmp_strval(gmp_powm($this->g, $this->a, $this->N), 16);
+    }
 
-// S
-$Ss = gmp_powm(gmp_mul($A, gmp_powm($v, $u, $N)), $b, $N);
-$Ks = hash('sha256', gmp_strval($Ss));
+    function setSalt($salt)
+    {
+        $this->salt = $salt;
+        $this->x = gmp_init(hash('sha256', $salt . $this->P), 16);
+    }
 
-// C -> S
-$proofC = hash_hmac('sha256', $Kc, gmp_strval($salt));
+    function getA()
+    {
+        return $this->A;
+    }
 
-// S -> C
-$proofS = hash_hmac('sha256', $Ks, gmp_strval($salt));
+    function setB($B)
+    {
+        $this->B = gmp_init($B, 16);
+        $this->u = gmp_init(hash('sha256', $this->A . $B), 16);
 
-print $proofS === $proofC ? "OK\n\n" : "Not OK :(\n\n";
+        $this->S = gmp_powm(
+            gmp_sub($this->B, gmp_mul($this->k, gmp_powm($this->g, $this->x, $this->N))),
+            gmp_add($this->a, gmp_mul($this->u, $this->x)),
+            $this->N
+        );
+    }
+}
+
+// don't output if we're included into another script.
+if (!debug_backtrace()) {
+    $I = 'email';
+    $P = 'password';
+
+    $S = new SRPServer($I, $P);
+    $C = new SRPClient($I, $P);
+
+    $C->setSalt($S->getSalt());
+    $S->setA($C->getA());
+    $C->setB($S->getB());
+
+    print $S->getProof() === $C->getProof() ? "OK\n\n" : "Not OK :(\n\n";
+}
