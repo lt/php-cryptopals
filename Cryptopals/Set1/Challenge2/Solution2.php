@@ -1,48 +1,44 @@
-<?php
+<?php declare(strict_types = 1);
 
 /*
- * http://cryptopals.com/sets/1/challenges/2/
- *
- * Fixed XOR
- *
- * Write a function that takes two equal-length buffers and produces their XOR combination.
- *
- * If your function works properly, then when you feed it the string:
- * 1c0111001f010100061a024b53535009181c
- *
- * ... after hex decoding, and when XOR'd against:
- * 686974207468652062756c6c277320657965
- *
- * ... should produce:
- * 746865206b696420646f6e277420706c6179
+ * PHP can natively XOR two strings using the `^` operator. The length of the
+ * output is the same as the length of the shortest string. I will use this
+ * operator in future solutions, but for this solution I will perform the XOR
+ * "the hard way"
  */
 
-function fixedXOR($one, $two)
-{
-    $output = '';
-    $limit = min(strlen($one), strlen($two));
+namespace Cryptopals\Set1\Challenge2;
 
-    for ($i = 0; $i < $limit; $i++) {
-        $output .= $one[$i] ^ $two [$i];
+use Cryptopals\Solution;
+
+class Solution2 extends Solution
+{
+    protected function fixedXOR(string $a, string $b): string
+    {
+        $output = '';
+        $limit = min(strlen($a), strlen($b));
+
+        for ($i = 0; $i < $limit; $i++) {
+            // It is possible to XOR characters (more precisely single character
+            // strings) directly, but being verbose for the sake of this solution
+            $output .= chr(ord($a[$i]) ^ ord($b [$i]));
+        }
+
+        return $output;
     }
 
-    return $output;
-}
+    protected function execute(): bool
+    {
+        $inputOne = hex2bin('1c0111001f010100061a024b53535009181c');
+        $inputTwo = hex2bin('686974207468652062756c6c277320657965');
+        $expected = '746865206b696420646f6e277420706c6179';
 
-// Don't output if we're included into another script.
-if (!debug_backtrace()) {
-    $inputOne = hex2bin('1c0111001f010100061a024b53535009181c');
-    $inputTwo = hex2bin('686974207468652062756c6c277320657965');
-    $output = hex2bin('746865206b696420646f6e277420706c6179');
+        $output = $this->fixedXOR($inputOne, $inputTwo);
+        $output = bin2hex($output);
 
-    print "Sanity checking using built-in functionality\n";
-    $sanity = ($inputOne ^ $inputTwo) === $output;
-    print $sanity ? "Success!\n\n" : "Failure :(\n\n";
+        print 'Expected: ' . $expected . "\n";
+        print 'Actual:   ' . $output . "\n";
 
-    print "Performing string XOR with homebrew function\n";
-    $homebrew = fixedXOR($inputOne, $inputTwo);
-    $homebrewSane = $homebrew === $output;
-    print $homebrewSane ? "Success!\n\n" : "Failure :(\n\n";
-
-    print "XORed string was:\n$homebrew\n";
+        return $output === $expected;
+    }
 }
