@@ -1,71 +1,73 @@
-<?php
+<?php declare(strict_types = 1);
 
 /*
- * http://cryptopals.com/sets/1/challenges/1/
+ * PHP has the built-in functions `hex2bin()` and `base64_encode()` however
+ * using these for this solution does not demonstrate an understanding of the
+ * process. I will use them for future solutions though.
  *
- * Convert hex to base64
+ * The conversion process is simple.
  *
- * The string:
- * 49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d
+ * Each hexadecimal character represents 4 bits of binary.
+ * Each base64 character represents 6 bits of binary.
  *
- * Should produce:
- * SSdtIGtpbGxpbmcgeW91ciBicmFpbiBsaWtlIGEgcG9pc29ub3VzIG11c2hyb29t
- *
- * So go ahead and make that happen. You'll need to use this code for the rest of the exercises.
- *
- * Cryptopals Rule
- * Always operate on raw bytes, never on encoded strings. Only use hex and base64 for pretty-printing.
+ * The conversion function pushes 4 bits at a time into a buffer, and when the
+ * buffer contains 6 or more bits, those bits are consumed to produce an
+ * output character.
  */
 
-function hexToBase64($hex)
+namespace Cryptopals\Set1\Challenge1;
+
+use Cryptopals\Solution;
+
+class Solution1 extends Solution
 {
-    $base16Chars = array_flip(str_split('0123456789abcdef'));
-    $base64Chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+    const BASE16_CHARSET = '0123456789abcdef';
+    const BASE64_CHARSET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 
-    // sanitise for our charset
-    $hex = strtolower($hex);
+    protected function hexToBase64(string $input): string
+    {
+        $inputLen = strlen($input);
 
-    $hexLen = strlen($hex);
-    $buffer = 0;
-    $bufferedBits = 0;
-    $base64 = '';
-
-    for ($i = 0; $i < $hexLen; $i++) {
-        $buffer = ($buffer << 4) | $base16Chars[$hex[$i]];
-        $bufferedBits += 4;
-
-        if ($bufferedBits >= 6) {
-            $bufferedBits -= 6;
-            $base64 .= $base64Chars[($buffer >> $bufferedBits) & 63];
-            $buffer &= (1 << $bufferedBits) - 1;
+        if ($inputLen % 2) {
+            throw new \InvalidArgumentException('Length of input must be a multiple of two.');
         }
+
+        $input = strtolower($input);
+        $buffer = 0;
+        $bufferedBits = 0;
+        $output = '';
+
+        for ($i = 0; $i < $inputLen; $i++) {
+            $charPos = strpos(self::BASE16_CHARSET, $input[$i]);
+            if ($charPos === false) {
+                throw new \DomainException('Invalid character at offset: ' . $i);
+            }
+
+            $buffer = ($buffer << 4) | $charPos;
+            $bufferedBits += 4;
+            if ($bufferedBits >= 6) {
+                $bufferedBits -= 6;
+                $output .= self::BASE64_CHARSET[($buffer >> $bufferedBits) & 63];
+            }
+        }
+
+        // Add padding if any bits remain in the buffer.
+        if ($bufferedBits) {
+            $output .= self::BASE64_CHARSET[($buffer << (6 - $bufferedBits))  & 63] . str_repeat('=', $inputLen % 3);
+        }
+
+        return $output;
     }
 
-    // finished consuming hex but less than 6 bits buffered
-    if ($bufferedBits) {
-        $base64 .= $base64Chars[$buffer << (6 - $bufferedBits)];
+    protected function execute(): bool
+    {
+        $input = '49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d';
+        $expected = 'SSdtIGtpbGxpbmcgeW91ciBicmFpbiBsaWtlIGEgcG9pc29ub3VzIG11c2hyb29t';
+        $output = $this->hexToBase64($input);
+
+        print 'Expected: ' . $expected . "\n";
+        print 'Actual:   ' . $output . "\n";
+
+        return $output === $expected;
     }
-
-    // because base64
-    $base64 .= str_repeat('=', $hexLen % 3);
-
-    return $base64;
-}
-
-// don't output if we include this file into another script
-if (!debug_backtrace()) {
-    $base16 = '49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d';
-    $base64 = 'SSdtIGtpbGxpbmcgeW91ciBicmFpbiBsaWtlIGEgcG9pc29ub3VzIG11c2hyb29t';
-
-    print "Sanity checking using built-in functions\n";
-    $sanity = base64_encode(hex2bin($base16)) === $base64;
-    print $sanity ? "Success!\n\n" : "Failure :(\n\n";
-
-    print "Converting hex to base64 with homebrew function\n";
-    $homebrew = hexToBase64($base16);
-    $homebrewSane = $homebrew === $base64;
-    print $homebrewSane ? "Success!\n\n" : "Failure :(\n\n";
-
-    $decodedHomebrew = base64_decode($homebrew);
-    print "Decoded string was:\n$decodedHomebrew\n";
 }
