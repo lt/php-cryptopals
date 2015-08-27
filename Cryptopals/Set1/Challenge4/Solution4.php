@@ -1,63 +1,56 @@
-<?php
+<?php declare(strict_types = 1);
 
-/*
- * http://cryptopals.com/sets/1/challenges/4/
- *
- * Detect single-character XOR
- *
- * One of the 60-character strings in this file has been encrypted by single-character XOR.
- *
- * Find it.
- *
- * (Your code from #3 should help.)
- */
+namespace Cryptopals\Set1\Challenge4;
 
-require_once '03-single-byte-xor-cipher.php';
+use Cryptopals\Set1\Challenge3\Solution3;
 
-function scoreSingleByteXORStrings(array $strings, array $weights, $penalty = 0)
+class Solution4 extends Solution3
 {
-    $topScores = [];
-    $topChars = [];
+    protected function scoreSingleByteXORStrings(array $strings): array
+    {
+        $topScores = [];
+        $topChars = [];
 
-    foreach ($strings as $pos => $string) {
-        $scores = scoreSingleByteXOR($string, $weights, $penalty);
-        arsort($scores);
-        $topScores[$pos] = current($scores);
-        $topChars[$pos] = key($scores);
+        foreach ($strings as $stringIndex => $string) {
+            $scores = $this->scoreSingleByteXORs($string);
+            arsort($scores);
+            $topScores[$stringIndex] = current($scores);
+            $topChars[$stringIndex] = key($scores);
+        }
+
+        return [$topScores, $topChars];
     }
 
-    return [$topScores, $topChars];
-}
+    protected function execute(): bool
+    {
+        $inputs = file(__DIR__ . '/4.txt', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        $inputs = array_map('hex2bin', $inputs);
 
-// don't output if we're included into another script.
-if (!debug_backtrace()) {
-    $encrypted = array_map('hex2bin', file('04-data.txt', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES));
+        list($topScores, $topChars) = $this->scoreSingleByteXORStrings($inputs);
+        arsort($topScores);
 
-    list($topScores, $topChars) = scoreSingleByteXORStrings($encrypted, $englishLanguageWeights);
-    arsort($topScores);
+        $limit = 5;
+        print "Score | Line | Char | Output\n";
+        print "---------------------------- -  -   -\n";
 
-    print "Highest scoring strings indexes and characters:\n";
+        $i = 0;
+        foreach ($topScores as $stringIndex => $score) {
+            $char = $topChars[$stringIndex];
+            printf(
+                "%5.2f | %4u | 0x%2x | %s\n",
+                $score,
+                $stringIndex,
+                $char,
+                $inputs[$stringIndex] ^ str_repeat(chr($char), strlen($inputs[$stringIndex]))
+            );
 
-    $i = 0;
-    foreach ($topScores as $k => $v) {
-        $c = $topChars[$k];
-        print "$k - $c - $v\n";
-
-        if (++$i === 3) {
-            break;
+            if (++$i === $limit) {
+                break;
+            }
         }
-    }
 
-    print "\nDecrypted strings:\n";
-
-    $i = 0;
-    foreach ($topScores as $k => $v) {
-        $encryptedLen = strlen($encrypted[$k]);
-        $decypted = $encrypted[$k] ^ str_repeat(chr($topChars[$k]), $encryptedLen);
-        print  "$k: $decypted\n\n";
-
-        if (++$i === 3) {
-            break;
-        }
+        // Ok this isn't really a true/false success one, but after a couple
+        // of runs, I know the output is correct.
+        return true;
     }
 }
