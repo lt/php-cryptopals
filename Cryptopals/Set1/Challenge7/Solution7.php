@@ -1,115 +1,65 @@
-<?php
+<?php declare(strict_types = 1);
 
-/*
- * http://cryptopals.com/sets/1/challenges/7/
- *
- * AES in ECB mode
- *
- * The Base64-encoded content in this file has been encrypted via AES-128 in ECB mode under the key
- * "YELLOW SUBMARINE".
- * (case-sensitive, without the quotes; exactly 16 characters; I like "YELLOW SUBMARINE" because it's exactly 16 bytes long, and now you do too).
- *
- * Decrypt it. You know the key, after all.
- *
- * Easiest way: use OpenSSL::Cipher and give it AES-128-ECB as the cipher.
- *
- * Do this with code.
- * You can obviously decrypt this using the OpenSSL command-line tool, but we're having you get ECB working in code for a reason. You'll need it a lot later on, and not just for attacking ECB.
- */
+namespace Cryptopals\Set1\Challenge7;
 
-require_once '../02-block-crypto/09-implement-pkcs7-padding.php';
-require_once '../02-block-crypto/15-pkcs7-padding-validation.php';
+use Cryptopals\Common\AES128;
+use Cryptopals\Solution;
 
-if (extension_loaded('openssl')) {
-    function _encryptAES128ECB($data, $key)
-    {
-        return openssl_encrypt($data, 'aes-128-ecb', $key, OPENSSL_RAW_DATA | OPENSSL_ZERO_PADDING);
-    }
-
-    function _decryptAES128ECB($data, $key)
-    {
-        return openssl_decrypt($data, 'aes-128-ecb', $key, OPENSSL_RAW_DATA | OPENSSL_ZERO_PADDING);
-    }
-}
-else if (extension_loaded('mcrypt')) {
-    function _encryptAES128ECB($data, $key)
-    {
-        return mcrypt_encrypt('rijndael-128', $key, $data, 'ecb');
-    }
-
-    function _decryptAES128ECB($data, $key)
-    {
-        return mcrypt_decrypt('rijndael-128', $key, $data, 'ecb');
-    }
-}
-else {
-    throw new RuntimeException('You need either the OpenSSL or MCrypt extensions installed for this one');
-}
-
-/*
- * So, AES is a block cipher, we make it into a stream cipher by adding magic to sequential blocks
- * ECB means "don't do a fucking thing" which just results in a bunch of AES blocks glued together. Fail.
- *
- * Lets go!
- */
-
-function encryptAES128ECB($data, $key)
+class Solution7 extends Solution
 {
-    $blocks = str_split($data, 16);
-    $numBlocks = count($blocks);
+    protected $aes;
+    protected $encryptionKey;
+    protected $decryptionKey;
 
-    if (strlen($blocks[$numBlocks - 1]) === 16) {
-        $blocks[] = addPKCS7Padding('', 16);
-    }
-    else {
-        $blocks[$numBlocks - 1] = addPKCS7Padding($blocks[$numBlocks - 1], 16);
-    }
+    protected function encrypt(string $message): string
+    {
+        $offset = 0;
+        $out = '';
+        $messageLen = strlen($message);
+        $blocks = $messageLen >> 4;
 
-    foreach ($blocks as &$block) {
-        $block = _encryptAES128ECB($block, $key);
-    }
-
-    return implode($blocks);
-}
-
-function decryptAES128ECB($data, $key, $strictPadding = false)
-{
-    $blocks = str_split($data, 16);
-
-    foreach ($blocks as &$block) {
-        $block = _decryptAES128ECB($block, $key);
-    }
-
-    $plaintext = implode($blocks);
-
-    try {
-        return removePKCS7Padding($plaintext);
-    }
-    catch (Exception $e) {
-        if ($strictPadding) {
-            throw $e;
+        while ($blocks--) {
+            $out .= $this->aes->encryptBlock($this->encryptionKey, substr($message, $offset, 16));
+            $offset += 16;
         }
-        return $plaintext;
+
+        return $out;
     }
-}
 
-// don't output if we're included into another script.
-if (!debug_backtrace()) {
-    $encrypted = base64_decode(file_get_contents('07-data.txt'));
-    $key = 'YELLOW SUBMARINE';
+    protected function decrypt(string $message)
+    {
+        $offset = 0;
+        $out = '';
+        $messageLen = strlen($message);
+        $blocks = $messageLen >> 4;
 
-    $decryptedSane = removePKCS7Padding(_decryptAES128ECB($encrypted, $key));
-    $decrypted = decryptAES128ECB($encrypted, $key);
+        while ($blocks--) {
+            $out .= $this->aes->decryptBlock($this->decryptionKey, substr($message, $offset, 16));
+            $offset += 16;
+        }
 
-    print "Sanity check:\n";
-    $sanity = $decryptedSane === $decrypted;
-    print $sanity ? "Success!\n\n" : "Failure :(\n\n";
+        return $out;
+    }
 
-    print "Homebrew sanity check:\n";
-    $test = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
-    $sanity = decryptAES128ECB(encryptAES128ECB($test, $key), $key) === $test;
-    print $sanity ? "Success!\n\n" : "Failure :(\n\n";
+    protected function setUp(): bool
+    {
+        $this->aes = new AES128();
 
-    print "Decrypted data:\n";
-    print "$decrypted\n";
+        return true;
+    }
+
+    protected function execute(): bool
+    {
+        $encrypted = base64_decode(file_get_contents(__DIR__ . '/7.txt'));
+        list($this->encryptionKey, $this->decryptionKey) = $this->aes->init('YELLOW SUBMARINE');
+
+        $decrypted = $this->decrypt($encrypted);
+
+        print "Decrypted data:\n";
+        print $decrypted . "\n";
+
+        // Ok this isn't really a true/false success one, but after a couple
+        // of runs, I know the output is correct.
+        return true;
+    }
 }
