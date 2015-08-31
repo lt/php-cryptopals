@@ -7,7 +7,7 @@ use Cryptopals\Set1\Challenge4\Solution4;
 class Solution6 extends Solution4
 {
     // popcount the diff (xor) bits between two strings
-    protected function hammingDistance($one, $two)
+    protected function hammingDistance(string $one, string $two): int
     {
         $count = 0;
 
@@ -21,7 +21,7 @@ class Solution6 extends Solution4
         return $count;
     }
 
-    protected function scoreKeyLengths($data, $lowKeySize, $highKeySize)
+    protected function scoreKeyLengths(string $data, int $lowKeySize, int $highKeySize): array
     {
         $scores = [];
 
@@ -45,7 +45,7 @@ class Solution6 extends Solution4
         return $scores;
     }
 
-    protected function transposeBlocks(array $blocks)
+    protected function transposeBlocks(array $blocks): array
     {
         $matrix = array_map('str_split', $blocks);
         $iterations = count($matrix[0]);
