@@ -4,6 +4,8 @@ The [Matasano crypto challenges](http://cryptopals.com/) completed using PHP
 
 The README files scattered throughout contain the original challenge text, in case the original site goes away.
 
+After running composer execute solutions with `./cryptopals.php <challenge_id>`
+
 Progress:
 
 - [x] **Set 1: Basics**
