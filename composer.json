@@ -1,16 +1,23 @@
 {
   "name": "leigh/php-cryptopals",
   "description": "The Matasano crypto challenges completed using PHP",
-  "minimum-stability": "stable",
-  "license": "proprietary",
+  "minimum-stability": "dev",
+  "license": "MIT",
   "authors": [
     {
       "name": "Leigh",
       "homepage": "https://github.com/lt"
     }
   ],
+  "repositories": [
+    {
+      "type": "vcs",
+      "url": "https://github.com/lt/PHP-AES"
+    }
+  ],
   "require": {
-    "php-64bit": ">=7.0"
+    "php-64bit": ">=7.0",
+    "lt/PHP-AES": "dev-master#dc6ff829835f0f3c9aeb34c4b53ead55e82a78fd"
   },
   "autoload": {
     "psr-4": {
