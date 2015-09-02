@@ -1,40 +1,53 @@
-<?php
+<?php declare(strict_types = 1);
 
-/*
- * http://cryptopals.com/sets/2/challenges/9/
- *
- * Implement PKCS#7 padding
- *
- * A block cipher transforms a fixed-sized block (usually 8 or 16 bytes) of plaintext into ciphertext. But we almost never want to transform a single block; we encrypt irregularly-sized messages.
- *
- * One way we account for irregularly-sized messages is by padding, creating a plaintext that is an even multiple of the blocksize. The most popular padding scheme is called PKCS#7.
- *
- * So: pad any block to a specific block length, by appending the number of bytes of padding to the end of the block. For instance,
- * "YELLOW SUBMARINE"
- *
- * ... padded to 20 bytes would be:
- * "YELLOW SUBMARINE\x04\x04\x04\x04"
- */
+namespace Cryptopals\Set2\Challenge9;
 
-function addPKCS7Padding($data, $padTo = 16)
+use Cryptopals\Solution;
+
+class Solution9 extends Solution
 {
-    $dataLen = strlen($data);
-    $padLen = $padTo - ($dataLen % $padTo);
+    protected function addPKCS7Padding(string $data, int $padTo = 16): string
+    {
+        $dataLen = strlen($data);
+        $padLen = $padTo - ($dataLen % $padTo);
 
-    return $data . str_repeat(chr($padLen), $padLen);
+        return $data . str_repeat(chr($padLen), $padLen);
+    }
+
+    protected function removePKCS7Padding(string $data): string
+    {
+        $dataLen = strlen($data);
+        $padChar = $data[$dataLen - 1];
+        $padLen = ord($padChar);
+
+        if ($padLen > $dataLen || $padLen === 0) {
+            throw new \Exception('Invalid padding');
+        }
+
+        for ($i = $dataLen - $padLen; $i < $dataLen; $i++) {
+            if ($data[$i] !== $padChar) {
+                throw new \Exception('Invalid padding');
+            }
+        }
+
+        if ($padLen) {
+            return substr($data, 0, -$padLen);
+        }
+
+        return $data;
+    }
+
+    protected function execute(): bool
+    {
+        $success = 1;
+
+        $success &= $this->addPKCS7Padding('YELLOW SUBMARINE', 20) === "YELLOW SUBMARINE\x04\x04\x04\x04";
+        $success &= $this->addPKCS7Padding('YELLOW SUBMARINE', 10) === "YELLOW SUBMARINE\x04\x04\x04\x04";
+        $success &= $this->addPKCS7Padding('YELLOW SUBMARINE', 6) === "YELLOW SUBMARINE\x02\x02";
+        // make sure a full block of padding is added when the data length is a multiple of the pad length
+        $success &= $this->addPKCS7Padding('YELLOW SUBMARINE', 8) === "YELLOW SUBMARINE\x08\x08\x08\x08\x08\x08\x08\x08";
+        $success &= $this->addPKCS7Padding('', 4) === "\x04\x04\x04\x04";
+
+        return (bool)$success;
+    }
 }
-
-// don't output if we're included into another script.
-if (!debug_backtrace()) {
-    $success = true;
-
-    $success &= addPKCS7Padding('YELLOW SUBMARINE', 20) === "YELLOW SUBMARINE\x04\x04\x04\x04";
-    $success &= addPKCS7Padding('YELLOW SUBMARINE', 10) === "YELLOW SUBMARINE\x04\x04\x04\x04";
-    $success &= addPKCS7Padding('YELLOW SUBMARINE', 6) === "YELLOW SUBMARINE\x02\x02";
-    // make sure a full block of padding is added when the data length is a multiple of the pad length
-    $success &= addPKCS7Padding('YELLOW SUBMARINE', 8) === "YELLOW SUBMARINE\x08\x08\x08\x08\x08\x08\x08\x08";
-    $success &= addPKCS7Padding('', 4) === "\x04\x04\x04\x04";
-
-    print $success ? "Success!\n\n" : "Failure :(\n\n";
-}
-
