@@ -1,83 +1,66 @@
-<?php
+<?php declare(strict_types = 1);
 
-/*
- * CBC bitflipping attacks
- *
- * Generate a random AES key.
- *
- * Combine your padding code and CBC code to write two functions.
- *
- * The first function should take an arbitrary input string, prepend the string:
- * "comment1=cooking%20MCs;userdata="
- *
- * .. and append the string:
- * ";comment2=%20like%20a%20pound%20of%20bacon"
- *
- * The function should quote out the ";" and "=" characters.
- *
- * The function should then pad out the input to the 16-byte AES block length and encrypt it under the random AES key.
- *
- * The second function should decrypt the string and look for the characters ";admin=true;" (or, equivalently, decrypt, split the string on ";", convert each resulting string into 2-tuples, and look for the "admin" tuple).
- *
- * Return true or false based on whether the string exists.
- *
- * If you've written the first function properly, it should not be possible to provide user input to it that will generate the string the second function is looking for. We'll have to break the crypto to do that.
- *
- * Instead, modify the ciphertext (without knowledge of the AES key) to accomplish this.
- *
- * You're relying on the fact that in CBC mode, a 1-bit error in a ciphertext block:
- * - Completely scrambles the block the error occurs in
- * - Produces the identical 1-bit error(/edit) in the next ciphertext block.
- *
- * Stop and think for a second.
- *
- * Before you implement this attack, answer this question: why does CBC mode have this property?
- */
+namespace Cryptopals\Set2\Challenge16;
 
-require_once '../utils/random-bytes.php';
-require_once '10-implement-cbc-mode.php';
+use Cryptopals\Solution;
 
-function getQuery($userData, $key, $iv)
+class Solution16 extends Solution
 {
-    $data = http_build_query(
-        [
-            'comment1' => 'cooking MCs',
-            'userdata' => $userData,
-            'comment2' => ' lke a pound of bacon'
-        ],
-        null, ';', PHP_QUERY_RFC3986
-    );
+    protected $cbc;
+    protected $encCtx;
+    protected $decCtx;
+    protected $pad;
 
-    return encryptAES128CBC($data, $key, $iv);
-}
+    protected function setUp(): bool
+    {
+        $key = random_bytes(16);
+        $iv = random_bytes(16);
 
-function isAdmin($query, $key, $iv)
-{
-    $data = decryptAES128CBC($query, $key, $iv);
+        $this->cbc = new \AES\Mode\CBC();
+        $this->encCtx = new \AES\Context\CBC($key, $iv);
+        $this->decCtx = new \AES\Context\CBC($key, $iv);
+        $this->pad = new \AES\Padding\PKCS7();
 
-    return strpos($data, ';admin=true;') !== false;
-}
-
-// don't output if we're included into another script.
-if (!debug_backtrace()) {
-    $key = getRandomBytes(16);
-    $iv = getRandomBytes(16);
-
-// 0..............f|0..............f|0..............f|0..............f|0..............f
-// comment1=cooking|%20MCs;userdata=
-//                 |                |aaaaaaaaaaaaaaaa|bbbb;admin=true |
-//                                                                   ;comment2=%20like%20a%20pound%20of%20bacon
-
-    $badData = 'aaaaaaaaaaaaaaaabbbb;admin=true';
-    $goodData = 'aaaaaaaaaaaaaaaabbbbbbbbbbbbbbb';
-    $bitMask = substr($badData ^ $goodData, 16);
-
-    $query = getQuery($goodData, $key, $iv);
-
-    for ($i = 32; $i < 47; $i++) {
-        $query[$i] = $query[$i] ^ $bitMask[$i - 32];
+        return true;
     }
 
-    print "Querystring has admin=true:\n";
-    print isAdmin($query, $key, $iv) ? "Yes\n\n" : "No :(";
+    protected function getQuery(string $userData): string
+    {
+        $data = http_build_query(
+            [
+                'comment1' => 'cooking MCs',
+                'userdata' => $userData,
+                'comment2' => ' lke a pound of bacon'
+            ],
+            '', ';', PHP_QUERY_RFC3986
+        );
+
+        return $this->cbc->encrypt($this->encCtx, $data . $this->pad->getPadding($data));
+    }
+
+    protected function isAdmin($query)
+    {
+        $data = $this->cbc->decrypt($this->decCtx, $query);
+
+        return strpos($data, ';admin=true;') !== false;
+    }
+
+    protected function execute(): bool
+    {
+        // 0..............f|0..............f|0..............f|0..............f|0..............f
+        // comment1=cooking|%20MCs;userdata=
+        //                 |                |aaaaaaaaaaaaaaaa|bbbb;admin=true |
+        //                                                                   ;comment2=%20like%20a%20pound%20of%20bacon
+
+        // 31 chars to account for the trailing semicolon
+        $badData = 'aaaaaaaaaaaaaaaabbbb;admin=true';
+        $goodData = 'aaaaaaaaaaaaaaaabbbbbbbbbbbbbbb';
+        $badBlock = substr($badData ^ $goodData, 16);
+
+        $query = $this->getQuery($goodData);
+
+        $query = substr($query, 0, 32) . (substr($query, 32, 15) ^ $badBlock) . substr($query, 47);
+
+        return $this->isAdmin($query);
+    }
 }
