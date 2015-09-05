@@ -14,29 +14,6 @@ class Solution9 extends Solution
         return $data . str_repeat(chr($padLen), $padLen);
     }
 
-    protected function removePKCS7Padding(string $data): string
-    {
-        $dataLen = strlen($data);
-        $padChar = $data[$dataLen - 1];
-        $padLen = ord($padChar);
-
-        if ($padLen > $dataLen || $padLen === 0) {
-            throw new \Exception('Invalid padding');
-        }
-
-        for ($i = $dataLen - $padLen; $i < $dataLen; $i++) {
-            if ($data[$i] !== $padChar) {
-                throw new \Exception('Invalid padding');
-            }
-        }
-
-        if ($padLen) {
-            return substr($data, 0, -$padLen);
-        }
-
-        return $data;
-    }
-
     protected function execute(): bool
     {
         $success = 1;
