@@ -75,7 +75,7 @@ class Solution6 extends Solution4
             $blocks = $this->transposeBlocks($blocks);
 
             list($topScores, $topChars) = $this->scoreSingleByteXORStrings($blocks);
-            printf("%4u | %5.3f | %s\n", $k, $v, implode(array_map('chr', $topChars)));
+            printf("%4u | %5.3f | %s\n", $k, $v, pack('C*', ...$topChars));
 
             if (++$i === $limit) {
                 break;
