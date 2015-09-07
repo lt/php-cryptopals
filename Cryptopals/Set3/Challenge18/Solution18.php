@@ -2,9 +2,9 @@
 
 namespace Cryptopals\Set3\Challenge18;
 
-use Cryptopals\Solution;
+use Cryptopals\Set1\Challenge6\Solution6;
 
-class Solution18 extends Solution
+class Solution18 extends Solution6
 {
     protected $ecb;
     protected $ctx;
@@ -42,7 +42,7 @@ class Solution18 extends Solution
         $ciphertext = base64_decode('L77na/nrFsKvynd6HzOoG7GHTLXsTVu9qvY/2syLXzhPweyyMTJULu/6/kXX0KSvoOLSFQ==');
 
         $plaintext = $this->decrypt($ciphertext);
-        $homebrewCipher = $this->encrypt($ciphertext);
+        $homebrewCipher = $this->encrypt($plaintext);
 
         print "Decrypted data:\n";
         print "$plaintext\n";
