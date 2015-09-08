@@ -56,7 +56,7 @@ function isAdmin($query, $key)
 
 // don't output if we're included into another script.
 if (!debug_backtrace()) {
-    $key = getRandomBytes(16);
+    $key = random_bytes(16);
 
 // 0..............f|0..............f|0..............f|0..............f
 // comment1=cooking|%20MCs;userdata=

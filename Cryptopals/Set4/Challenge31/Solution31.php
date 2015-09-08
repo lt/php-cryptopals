@@ -63,7 +63,7 @@ class pretendAPI
 
     function __construct()
     {
-        $this->key = getRandomBytes(64);
+        $this->key = random_bytes(64);
     }
 
     function generate($file)

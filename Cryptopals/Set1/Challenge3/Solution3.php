@@ -35,7 +35,7 @@ class Solution3 extends Solution
         'z' =>  0.034, 'x' =>  0.017
     ];
 
-    protected function scoreASCII(string $data): float
+    protected function scoreASCII(string $data, array $overrideWeights = []): float
     {
         $data = strtolower($data);
         $dataLen = strlen($data);
@@ -51,8 +51,8 @@ class Solution3 extends Solution
             }
 
             // First letter of the string, or preceeded by space or tab
-            $weights = ($i === 0 || $data[$i - 1] === ' ' || $data[$i - 1] === "\x9") ?
-                self::FREQ_START_EN : self::FREQ_EN;
+            $weights = $overrideWeights + (($i === 0 || $data[$i - 1] === ' ' || $data[$i - 1] === "\x9") ?
+                self::FREQ_START_EN : self::FREQ_EN);
 
             if (isset($weights[$c])) {
                 $score += $weights[$c];
@@ -66,7 +66,7 @@ class Solution3 extends Solution
         return $score / $dataLen;
     }
 
-    protected function scoreSingleByteXORs(string $input): array
+    protected function scoreSingleByteXORs(string $input, array $overrideWeights = []): array
     {
         $inputLen = strlen($input);
 
@@ -74,7 +74,7 @@ class Solution3 extends Solution
 
         for ($i = 0; $i < 256; $i++) {
             $trial = $input ^ str_repeat(chr($i), $inputLen);
-            $scores[$i] = $this->scoreASCII($trial);
+            $scores[$i] = $this->scoreASCII($trial, $overrideWeights);
         }
 
         return $scores;

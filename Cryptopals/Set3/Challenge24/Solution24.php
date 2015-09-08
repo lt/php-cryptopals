@@ -39,7 +39,7 @@ function encryptMT19937($data, $seed = 0)
 
 function encryptWithRandomPad($data, $seed = 0)
 {
-    return encryptMT19937(getRandomBytes(rand(1,20)) . $data, $seed);
+    return encryptMT19937(random_bytes(rand(1,20)) . $data, $seed);
 }
 
 

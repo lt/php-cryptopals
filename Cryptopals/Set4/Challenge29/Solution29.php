@@ -44,7 +44,7 @@ class pretendAPI
 
     function __construct()
     {
-        $this->key = getRandomBytes(rand(8, 32));
+        $this->key = random_bytes(rand(8, 32));
     }
 
     function sign($message)

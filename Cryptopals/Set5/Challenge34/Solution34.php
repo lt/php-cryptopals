@@ -105,7 +105,7 @@ class ConversationEntity
     function send($data)
     {
         $key = sha1($this->shared, true);
-        $iv = getRandomBytes(16);
+        $iv = random_bytes(16);
 
         $message = $iv . encryptAES128CBC($data, $key, $iv);
 

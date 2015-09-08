@@ -44,8 +44,8 @@ function editAES128CTR($ciphertext, $key, $nonce = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0
 
 // don't output if we're included into another script.
 if (!debug_backtrace()) {
-    $key = getRandomBytes(16);
-    $nonce = getRandomBytes(16);
+    $key = random_bytes(16);
+    $nonce = random_bytes(16);
 
     $ciphertext = encryptAES128CTR(
         decryptAES128ECB(
