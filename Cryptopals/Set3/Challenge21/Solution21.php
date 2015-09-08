@@ -1,72 +1,78 @@
-<?php
+<?php declare(strict_types = 1);
 
-/*
- * http://cryptopals.com/sets/3/challenges/21/
- *
- * Implement the MT19937 Mersenne Twister RNG
- *
- * You can get the psuedocode for this from Wikipedia.
- *
- * If you're writing in Python, Ruby, or (gah) PHP, your language is probably already giving you MT19937 as "rand()"; don't use rand(). Write the RNG yourself.
- */
+namespace Cryptopals\Set3\Challenge21;
 
-if (PHP_INT_SIZE < 8) {
-    throw new Exception('64 bit PHP required!');
-}
+use Cryptopals\Solution;
 
-class MT19937
+class Solution21 extends Solution
 {
     protected $MT = [];
-    protected $index = 624;
+    protected $index = 625;
 
     function init($seed = 5489)
     {
-        $MT = [$seed];
+        $MT = [$seed & 0xffffffff];
 
-        for ($i = 0; $i < 623; $i++) {
-            $MT[$i + 1] = (1812433253 * ($MT[$i] ^ ($MT[$i] >> 30)) + $i) & 0xffffffff;
+        for ($i = 1; $i < 624; $i++) {
+            $MT[$i] = (1812433253 * ($MT[$i - 1] ^ ($MT[$i - 1] >> 30)) + $i) & 0xffffffff;
         }
 
         $this->MT = $MT;
         $this->index = 624;
     }
 
+    protected function twist($m, $u, $v)
+    {
+        $y = ($u & 0x80000000) | ($v & 0x7fffffff);
+        return $m ^ (($y >> 1) & 0x7fffffff) ^ (0x9908b0df * ($v & 1));
+    }
+
     function int32()
     {
-        if ($this->index > 623) {
+        if ($this->index >= 624) {
+            if ($this->index === 625) {
+                $this->init();
+            }
+
             for ($i = 0; $i < 227; $i++) {
-                $y = ($this->MT[$i] & 0x80000000) | ($this->MT[$i + 1] & 0x7fffffff);
-                $this->MT[$i] = $this->MT[$i + 397] ^ ($y >> 1) ^ (($y & 1) * 0x9908b0df);
+                $this->MT[$i] = $this->twist($this->MT[$i + 397], $this->MT[$i], $this->MT[$i + 1]);
             }
-
             for (; $i < 623; $i++) {
-                $y = ($this->MT[$i] & 0x80000000) | ($this->MT[$i + 1] & 0x7fffffff);
-                $this->MT[$i] = $this->MT[$i - 227] ^ ($y >> 1) ^ (($y & 1) * 0x9908b0df);
+                $this->MT[$i] = $this->twist($this->MT[$i - 227], $this->MT[$i], $this->MT[$i + 1]);
             }
-
-            $y = ($this->MT[623] & 0x80000000) | ($this->MT[0] & 0x7fffffff);
-            $this->MT[623] = $this->MT[396] ^ ($y >> 1) ^ (($y & 1) * 0x9908b0df);
+            $this->MT[623] = $this->twist($this->MT[396], $this->MT[623], $this->MT[0]);
 
             $this->index = 0;
         }
 
         $y = $this->MT[$this->index++];
 
-        $y ^= $y >> 11;
-        $y ^= ($y << 7) & 0x9d2c5680;
+        $y ^= ($y >> 11) & 0x001fffff;
+        $y ^= ($y <<  7) & 0x9d2c5680;
         $y ^= ($y << 15) & 0xefc60000;
+        $y ^= ($y >> 18) & 0x00003fff;
 
-        return $y ^ ($y >> 18);
+        return $y;
     }
-}
 
-// don't output if we're included into another script.
-if (!debug_backtrace()) {
-    $mt = new MT19937();
-    $mt->init(time()); // :D
+    protected function execute(): bool
+    {
+        $success = 1;
 
-    print "Getting some random numbers:\n";
-    for ($i = 0; $i < 10; $i++) {
-        print $mt->int32() . "\n";
+        $this->init(12345678);
+
+        $rand = $this->int32();
+        print "$rand\n";
+        $success &= ($rand === 1055721139);
+
+        $rand = $this->int32();
+        print "$rand\n";
+        $success &= ($rand === 3422054626);
+
+        $rand = $this->int32();
+        print "$rand\n";
+        $success &= ($rand === 2561641375);
+
+        return (bool)$success;
     }
 }
