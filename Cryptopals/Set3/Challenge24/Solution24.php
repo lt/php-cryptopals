@@ -1,78 +1,55 @@
-<?php
+<?php declare(strict_types = 1);
 
-/*
- * http://cryptopals.com/sets/3/challenges/24/
- *
- * Create the MT19937 stream cipher and break it
- *
- * You can create a trivial stream cipher out of any PRNG; use it to generate a sequence of 8 bit outputs and call those outputs a keystream. XOR each byte of plaintext with each successive byte of keystream.
- *
- * Write the function that does this for MT19937 using a 16-bit seed. Verify that you can encrypt and decrypt properly. This code should look similar to your CTR code.
- *
- * Use your function to encrypt a known plaintext (say, 14 consecutive 'A' characters) prefixed by a random number of random characters.
- *
- * From the ciphertext, recover the "key" (the 16 bit seed).
- *
- * Use the same idea to generate a random "password reset token" using MT19937 seeded from the current time.
- *
- * Write a function to check if any given password token is actually the product of an MT19937 PRNG seeded with the current time.
- */
+namespace Cryptopals\Set3\Challenge24;
 
-require_once '../utils/random-bytes.php';
-require_once '21-implement-the-mt19937-mersenne-twister-rng.php';
+use Cryptopals\Set3\Challenge21\Solution21;
 
-function encryptMT19937($data, $seed = 0)
+class Solution24 extends Solution21
 {
-    $seed &= 0xffff;
+    function encrypt($data, $seed = 0)
+    {
+        $seed &= 0xffff;
 
-    $mt = new MT19937();
-    $mt->init($seed);
+        $this->init($seed);
 
-    $dataLen = strlen($data);
+        $dataLen = strlen($data);
+        $blocks = ceil($dataLen / 4);
+        $keyStream = [];
 
-    for ($i = 0; $i < $dataLen; $i++) {
-        $data[$i] = chr(ord($data[$i]) ^ ($mt->int32() & 0xff));
+        while ($blocks--) {
+            $keyStream[] = $this->int32();
+        }
+
+        return $data ^ pack('N*', ...$keyStream);
     }
 
-    return $data;
-}
+    function encryptWithRandomPad($data, $seed = 0)
+    {
+        return $this->encrypt(random_bytes(mt_rand(1,20)) . $data, $seed);
+    }
 
-function encryptWithRandomPad($data, $seed = 0)
-{
-    return encryptMT19937(random_bytes(rand(1,20)) . $data, $seed);
-}
+    protected function execute(): bool
+    {
+        $plaintext = 'the matasano crypto challenges';
+        $sanity = $this->encrypt($this->encrypt($plaintext)) === $plaintext;
 
+        $secretSeed = mt_rand(0, 0xffff);
+        $plaintext = str_repeat('A', 14);
+        $ciphertext = $this->encryptWithRandomPad($plaintext, $secretSeed);
 
-// don't output if we're included into another script.
-if (!debug_backtrace()) {
-    $plaintext = 'the matasano crypto challenges';
+        $plainLen = strlen($plaintext);
 
-    print "Sanity check:\n";
-    $sanity = encryptMT19937(encryptMT19937($plaintext)) === $plaintext;
-    print $sanity ? "Success!\n\n" : "Failure :(\n\n";
+        for ($i = 0; $i < 0xffff; $i++) {
+            if ($i % 820 == 0) {
+                print '.';
+            }
 
-    $secretSeed = rand(0, 0xffff);
-    $plaintext = str_repeat('A', 14);
-    $ciphertext = encryptWithRandomPad($plaintext, $secretSeed);
-
-    $cipherLen = strlen($ciphertext);
-    $padLen = $cipherLen - strlen($plaintext);
-    // stupid unpack indexing array from 1...
-    $keyStream = array_values(unpack('C*', substr($ciphertext, $padLen) ^ $plaintext));
-
-    $mt = new MT19937();
-    for ($i = 0; $i < 0xffff; $i++) {
-        $mt->init($i);
-        $thisSequence = [];
-        for ($j = 0; $j < $padLen; $j++) {
-            $mt->int32();
+            if (substr($this->encrypt($ciphertext, $i), -$plainLen) === $plaintext) {
+                print "\n\nSeed was: $i\n";
+                break;
+            }
         }
-        for (; $j < $cipherLen; $j++) {
-            $thisSequence[] = $mt->int32() & 0xff;
-        }
-        if ($thisSequence === $keyStream) {
-            print "Seed was: $i\n\n";
-            break;
-        }
+
+        return $sanity;
     }
 }
