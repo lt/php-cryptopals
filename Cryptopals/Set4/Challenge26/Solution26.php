@@ -1,60 +1,56 @@
-<?php
+<?php declare(strict_types = 1);
 
-/*
- * http://cryptopals.com/sets/4/challenges/26/
- *
- * CTR bitflipping
- *
- * There are people in the world that believe that CTR resists bit flipping attacks of the kind to which CBC mode is susceptible.
- *
- * Re-implement the CBC bitflipping exercise from earlier to use CTR mode instead of CBC mode. Inject an "admin=true" token.
- */
+namespace Cryptopals\Set4\Challenge26;
 
+use Cryptopals\Set3\Challenge18\Solution18;
 
-require_once '../utils/random-bytes.php';
-require_once '../03-block-and-stream-crypto/18-implement-ctr-the-stream-cipher-mode.php';
-
-function getQuery($userData, $key, $iv)
+class Solution26 extends Solution18
 {
-    $data = http_build_query(
-        [
-            'comment1' => 'cooking MCs',
-            'userdata' => $userData,
-            'comment2' => ' lke a pound of bacon'
-        ],
-        null, ';', PHP_QUERY_RFC3986
-    );
+    protected function setUp(): bool
+    {
+        $this->ecb = new \AES\Mode\ECB();
+        $this->ctx = new \AES\Context\ECB(random_bytes(16));
+        $this->pad = new \AES\Padding\PKCS7();
 
-    return encryptAES128CTR($data, $key, $iv);
-}
-
-function isAdmin($query, $key, $iv)
-{
-    $data = encryptAES128CTR($query, $key, $iv);
-
-    return strpos($data, ';admin=true;') !== false;
-}
-
-// don't output if we're included into another script.
-if (!debug_backtrace()) {
-    $key = random_bytes(16);
-    $iv = random_bytes(16);
-
-// 0..............f|0..............f|0..............f|0..............f|0..............f
-// comment1=cooking|%20MCs;userdata=
-//                 |                |bbbb;admin=true |
-//                                                  ;|comment2=%20like%20a%20pound%20of%20bacon
-
-    $badData = 'bbbb;admin=true';
-    $goodData = 'bbbbbbbbbbbbbbb';
-    $bitMask = $badData ^ $goodData;
-
-    $query = getQuery($goodData, $key, $iv);
-
-    for ($i = 32; $i < 47; $i++) {
-        $query[$i] = $query[$i] ^ $bitMask[$i - 32];
+        return true;
     }
 
-    print "Querystring has admin=true:\n";
-    print isAdmin($query, $key, $iv) ? "Yes\n\n" : "No :(";
+    protected function getQuery(string $userData): string
+    {
+        $data = http_build_query(
+            [
+                'comment1' => 'cooking MCs',
+                'userdata' => $userData,
+                'comment2' => ' lke a pound of bacon'
+            ],
+            '', ';', PHP_QUERY_RFC3986
+        );
+
+        return $this->encrypt($data);
+    }
+
+    protected function isAdmin(string $query): bool
+    {
+        $data = $this->decrypt($query);
+
+        return strpos($data, ';admin=true;') !== false;
+    }
+
+    protected function execute(): bool
+    {
+        // 0..............f|0..............f|0..............f|0..............f|0..............f
+        // comment1=cooking|%20MCs;userdata=
+        //                 |                |bbbb;admin=true |
+        //                                                  ;|comment2=%20like%20a%20pound%20of%20bacon
+
+        $badData = 'bbbb;admin=true';
+        $goodData = 'bbbbbbbbbbbbbbb';
+        $diff = $badData ^ $goodData;
+
+        $query = $this->getQuery($goodData);
+
+        $query = substr($query, 0, 32) . (substr($query, 32, 15) ^ $diff) . substr($query, 47);
+
+        return $this->isAdmin($query);
+    }
 }
