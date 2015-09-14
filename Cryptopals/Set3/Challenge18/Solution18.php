@@ -20,21 +20,21 @@ class Solution18 extends Solution6
     }
 
     // Not using the AES lib fully because the counter is implemented funny in the challenge
-    function encrypt($message)
+    function encrypt(string $message, string $nonce = "\0\0\0\0\0\0\0\0"): string
     {
         $blocks = str_split($message, 16);
         $counter = 0;
 
         foreach ($blocks as &$block) {
-            $block ^= $this->ecb->encrypt($this->ctx, pack('P2', 0, $counter++));
+            $block ^= $this->ecb->encrypt($this->ctx, $nonce . pack('P', $counter++));
         }
 
         return implode($blocks);
     }
 
-    function decrypt($message)
+    function decrypt(string $message, string $nonce = "\0\0\0\0\0\0\0\0"): string
     {
-        return $this->encrypt($message);
+        return $this->encrypt($message, $nonce);
     }
 
     protected function execute(): bool
