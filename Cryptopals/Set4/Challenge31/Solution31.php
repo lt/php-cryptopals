@@ -1,110 +1,91 @@
-<?php
+<?php declare(strict_types = 1);
 
-/*
- * http://cryptopals.com/sets/4/challenges/31/
- *
- * Implement and break HMAC-SHA1 with an artificial timing leak
- *
- * The psuedocode on Wikipedia should be enough. HMAC is very easy.
- *
- * Using the web framework of your choosing (Sinatra, web.py, whatever), write a tiny application that has a URL that takes a "file" argument and a "signature" argument, like so:
- * http://localhost:9000/test?file=foo&signature=46b4ec586117154dacd49d664e5d63fdc88efb51
- *
- * Have the server generate an HMAC key, and then verify that the "signature" on incoming requests is valid for "file", using the "==" operator to compare the valid MAC for a file with the "signature" parameter (in other words, verify the HMAC the way any normal programmer would verify it).
- *
- * Write a function, call it "insecure_compare", that implements the == operation by doing byte-at-a-time comparisons with early exit (ie, return false at the first non-matching byte).
- *
- * In the loop for "insecure_compare", add a 50ms sleep (sleep 50ms after each byte).
- *
- * Use your "insecure_compare" function to verify the HMACs on incoming requests, and test that the whole contraption works. Return a 500 if the MAC is invalid, and a 200 if it's OK.
- *
- * Using the timing leak in this application, write a program that discovers the valid MAC for any file.
- *
- * Why artificial delays?
- * Early-exit string compares are probably the most common source of cryptographic timing leaks, but they aren't especially easy to exploit. In fact, many timing leaks (for instance, any in C, C++, Ruby, or Python) probably aren't exploitable over a wide-area network at all. To play with attacking real-world timing leaks, you have to start writing low-level timing code. We're keeping things cryptographic in these challenges.
- */
+namespace Cryptopals\Set4\Challenge31;
 
-require_once '../utils/random-bytes.php';
-require_once '28-implement-a-sha-1-keyed-mac.php';
+use Cryptopals\Set4\Challenge28\Solution28;
 
-function HMACSHA1($key, $message)
+class Solution31 extends Solution28
 {
-    $keyLen = strlen($key);
+    protected $apiKey;
 
-    if ($keyLen > 64) {
-        $key = sha1KeyedMAC('', $message);
-    }
-    else if ($keyLen < 64) {
-        $key .= str_repeat("\0", 64 - $keyLen);
-    }
-
-    $oPad = str_repeat("\x5c", 64) ^ $key;
-    $iPad = str_repeat("\x36", 64) ^ $key;
-
-    return sha1KeyedMAC($oPad, sha1KeyedMAC($iPad, $message));
-}
-
-function insecureCompare($one, $two)
-{
-    $three = unpack('C*', $one ^ $two);
-    foreach ($three as $k => $v) {
-        if ($v) {
-            usleep(50000 * $k);
-            return false;
-        }
-    }
-
-    return true;
-}
-
-class pretendAPI
-{
-    private $key;
-
-    function __construct()
+    protected function setUp(): bool
     {
-        $this->key = random_bytes(64);
+        $this->apiKey = random_bytes(mt_rand(8, 32));
+        return true;
     }
 
-    function generate($file)
+    protected function apiSign(string $message): string
     {
-        return HMACSHA1($this->key, $file);
+        return $this->HMACSHA1($this->apiKey, $message);
     }
 
-    function validate($file, $signature)
+    protected function apiVerify(string $message, string $mac): int
     {
-        return insecureCompare($signature, HMACSHA1($this->key, $file)) ? 200 : 500;
+        return $this->insecureCompare($mac, $this->apiSign($message)) ? 200 : 500;
+    }
+    
+    protected function HMACSHA1(string $key, string $message): string
+    {
+        $keyLen = strlen($key);
+
+        if ($keyLen > 64) {
+            $key = $this->sha1KeyedMAC('', $message);
+        }
+        else if ($keyLen < 64) {
+            $key .= str_repeat("\0", 64 - $keyLen);
+        }
+
+        $oPad = str_repeat("\x5c", 64) ^ $key;
+        $iPad = str_repeat("\x36", 64) ^ $key;
+
+        return $this->sha1KeyedMAC($oPad, $this->sha1KeyedMAC($iPad, $message));
+    }
+
+    protected function insecureCompare(string $one, string $two): bool
+    {
+        $three = unpack('C*', $one ^ $two);
+        foreach ($three as $k => $v) {
+            if ($v) {
+                // 50ms seems a bit long considering we didn't do the web api
+                usleep(10000 * $k);
+                return false;
+            }
+        }
+
+        return true;
+    }
+    
+    protected function execute(): bool
+    {
+        // attacker has a file but not the key to generate valid signature
+
+        $file = 'my evil file';
+        $crackedSig = str_repeat("\0", 20);
+
+        print "This will take a while.\n\n";
+        print bin2hex($this->apiSign($file)) . "\n";
+
+        for ($x = 0; $x < 20; $x++) {
+            $timings = [];
+
+            for ($i = 0; $i < 256; $i++) {
+                $crackedSig[$x] = chr($i);
+                $start = microtime(true);
+                if ($this->apiVerify($file, $crackedSig) === 500) {
+                    $timings[$i] = microtime(true) - $start;
+                }
+                else {
+                    $timings[$i] = PHP_INT_MAX;
+                }
+            }
+
+            arsort($timings);
+            $crackedSig[$x] = chr(key($timings));
+            print bin2hex($crackedSig) . "\n";
+        }
+
+        print "\nActual signature:\n";
+        print bin2hex($this->apiSign($file)) . "\n";
+        return $this->apiVerify($file, $crackedSig) === 200;
     }
 }
-
-$api = new pretendAPI();
-
-// attacker has a file but not the key to generate valid signature
-
-$file = 'my evil file';
-
-$crackedSig = str_repeat("\0", 20);
-
-print "This will take a while.\n\n";
-
-for ($x = 0; $x < 20; $x++) {
-    $timings = [];
-
-    for ($i = 0; $i < 256; $i++) {
-        $crackedSig[$x] = chr($i);
-        $start = microtime(true);
-        if ($api->validate($file, $crackedSig) === 500) {
-            $timings[$i] = microtime(true) - $start;
-        }
-        else {
-            $timings[$i] = PHP_INT_MAX;
-        }
-    }
-
-    arsort($timings);
-    $crackedSig[$x] = chr(key($timings));
-    var_dump(bin2hex($crackedSig));
-}
-
-print "\nFinal signature validates:\n";
-print $api->validate($file, $crackedSig) === 200 ? "Success!\n\n" : "Failure :(\n\n";
