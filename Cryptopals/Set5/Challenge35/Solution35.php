@@ -1,33 +1,4 @@
-<?php
-
-/*
- * http://cryptopals.com/sets/5/challenges/35/
- *
- * Implement DH with negotiated groups, and break with malicious "g" parameters
- *
- * A->B
- * Send "p", "g"
- * B->A
- * Send ACK
- * A->B
- * Send "A"
- * B->A
- * Send "B"
- * A->B
- * Send AES-CBC(SHA1(s)[0:16], iv=random(16), msg) + iv
- * B->A
- * Send AES-CBC(SHA1(s)[0:16], iv=random(16), A's msg) + iv
- *
- * Do the MITM attack again, but play with "g". What happens with:
- * g = 1
- * g = p
- * g = p - 1
- *
- * Write attacks for each.
- *
- * When does this ever happen?
- * Honestly, not that often in real-world systems. If you can mess with "g", chances are you can mess with something worse. Most systems pre-agree on a static DH group. But the same construction exists in Elliptic Curve Diffie-Hellman, and this becomes more relevant there.
- */
+<?php declare(strict_types = 1);
 
 /*
  * g = 1
@@ -55,292 +26,59 @@
  *          when a is odd == p - 1
  */
 
-require_once '../utils/random-bytes.php';
-require_once '../02-block-crypto/10-implement-cbc-mode.php';
-require_once '../04-stream-crypto-and-randomness/28-implement-a-sha-1-keyed-mac.php';
-require_once '33-implement-diffie-hellman.php';
+namespace Cryptopals\Set5\Challenge35;
 
-class ConversationEntity
+use Cryptopals\Set5\Challenge33\DH;
+use Cryptopals\Solution;
+
+class Solution35 extends Solution
 {
-    private $name;
-    private $dh;
-
-    private $priv;
-    private $pub;
-    private $shared;
-
-    private $state = 0;
-
-    public $onSend;
-
-    function __construct($name, DH $dh)
+    protected function execute(): bool
     {
-        $this->name = $name;
-        $this->dh = $dh;
+        print "Testing normal comms:\n\n";
 
-        $this->priv = $this->dh->generatePrivate();
-    }
+        $A = new ConversationEntity('A', new DH);
+        $B = new ConversationEntity('B', new DH);
 
-    function groupNeg()
-    {
-        print "{$this->name}: p/g neg\n";
+        $M = new MITM($A, $B);
 
-        $obj = new \stdClass();
-        $obj->msg = 'neg';
-        $obj->p = $this->dh->p();
-        $obj->g = $this->dh->g();
+        $A->groupNeg();
+        $A->send('Hello there!');
+        $B->send('Hi!');
 
-        $func = $this->onSend;
-        $func(json_encode($obj));
-    }
+        print "\nMITM with g = 1:\n\n";
 
-    function groupAck()
-    {
-        print "{$this->name}: p/g ack\n";
+        $A = new ConversationEntity('A', new DH);
+        $B = new ConversationEntity('B', new DH);
 
-        $obj = new \stdClass();
-        $obj->msg = 'ack';
-        $obj->p = $this->dh->p();
-        $obj->g = $this->dh->g();
+        $M = new MITM1($A, $B);
 
-        $func = $this->onSend;
-        $func(json_encode($obj));
-    }
+        $A->groupNeg();
+        $A->send('Hello there!');
+        $B->send('Hi!');
 
-    function sendPub()
-    {
-        print "{$this->name}: send pub\n";
+        print "\nMITM with g = p:\n\n";
 
-        $this->pub = $this->dh->generatePublic($this->priv);
+        $A = new ConversationEntity('A', new DH);
+        $B = new ConversationEntity('B', new DH);
 
-        $obj = new \stdClass();
-        $obj->msg = 'pub';
-        $obj->pub = gmp_strval($this->pub, 16);
+        $M = new MITMP($A, $B);
 
-        $func = $this->onSend;
-        $func(json_encode($obj));
-    }
+        $A->groupNeg();
+        $A->send('Hello there!');
+        $B->send('Hi!');
 
-    function send($data)
-    {
-        $obj = new \stdClass();
-        $obj->msg = 'dat';
-        $obj->data = $data;
+        print "\nMITM with g = p - 1:\n\n";
 
-        $data = json_encode($obj);
+        $A = new ConversationEntity('A', new DH);
+        $B = new ConversationEntity('B', new DH);
 
-        if (!is_null($this->shared)) {
-            $key = sha1($this->shared, true);
-            $iv = random_bytes(16);
+        $M = new MITMPminus1($A, $B);
 
-            $data = $iv . encryptAES128CBC($data, $key, $iv);
-        }
+        $A->groupNeg();
+        $A->send('Hello there!');
+        $B->send('Hi!');
 
-        $dataLen = strlen($data);
-
-        print "{$this->name}: sending $dataLen bytes\n";
-
-        $func = $this->onSend;
-        $func($data);
-    }
-
-    function receive($data)
-    {
-        $dataLen = strlen($data);
-        print "{$this->name}: received $dataLen bytes\n";
-
-        if (!is_null($this->shared)) {
-            $key = sha1($this->shared, true);
-            $iv = substr($data, 0, 16);
-
-            $data = decryptAES128CBC(substr($data, 16), $key, $iv);
-        }
-
-        $obj = json_decode($data);
-
-        switch ($obj->msg) {
-            case 'neg':
-                print "{$this->name}: received group negotiation\n";
-                $this->dh->g($obj->g);
-                $this->groupAck();
-                $this->sendPub();
-                break;
-            case 'ack':
-                print "{$this->name}: received group acknowledgement\n";
-                $this->dh->g($obj->g);
-                $this->sendPub();
-                break;
-            case 'pub':
-                print "{$this->name}: received public key\n";
-                $this->shared = gmp_strval($this->dh->generateShared($this->priv, gmp_init($obj->pub, 16)), 16);
-                break;
-            case 'dat':
-                print "{$this->name}: received data: {$obj->data}\n";
-                break;
-            default:
-                print "{$this->name}: unknown message\n";
-        }
+        return true;
     }
 }
-
-class MITM
-{
-    function sniffData($data)
-    {
-        return $data;
-    }
-
-    function __construct(ConversationEntity $A, ConversationEntity $B)
-    {
-        $A->onSend = function($data) use ($B) {
-            $B->receive($this->sniffData($data));
-        };
-
-        $B->onSend = function($data) use ($A) {
-            $A->receive($this->sniffData($data));
-        };
-    }
-}
-
-class MITM1 extends MITM
-{
-    function sniffData($data)
-    {
-        $obj = json_decode($data);
-        if (is_object($obj)) {
-            if (is_object($obj) && ($obj->msg === 'neg' || $obj->msg === 'ack')) {
-                print "M: manipulating g\n";
-                $obj->g = '1';
-                $data = json_encode($obj);
-            }
-            else {
-                print "M: sniffed: $data\n";
-            }
-        }
-        else {
-            $key = sha1('1', true);
-            $iv = substr($data, 0, 16);
-
-            $message = decryptAES128CBC(substr($data, 16), $key, $iv);
-            print "M: sniffed: $message\n";
-        }
-        return $data;
-    }
-}
-
-class MITMP extends MITM
-{
-    function sniffData($data)
-    {
-        $obj = json_decode($data);
-        if (is_object($obj)) {
-            if (is_object($obj) && ($obj->msg === 'neg' || $obj->msg === 'ack')) {
-                print "M: manipulating g\n";
-                $obj->g = $obj->p;
-                $data = json_encode($obj);
-            }
-            else {
-                print "M: sniffed: $data\n";
-            }
-        }
-        else {
-            $key = sha1('0', true);
-            $iv = substr($data, 0, 16);
-
-            $message = decryptAES128CBC(substr($data, 16), $key, $iv);
-            print "M: sniffed: $message\n";
-        }
-        return $data;
-    }
-}
-
-
-class MITMPminus1 extends MITM
-{
-    private $Pminus1;
-
-    function sniffData($data)
-    {
-        $obj = json_decode($data);
-        if (is_object($obj)) {
-            if ($obj->msg === 'neg' || $obj->msg === 'ack') {
-                print "M: manipulating g\n";
-                $this->Pminus1 = gmp_strval(gmp_sub(gmp_init($obj->p, 16), gmp_init(1)), 16);
-                $obj->g = $this->Pminus1;
-                $data = json_encode($obj);
-            }
-            else {
-                print "M: sniffed: $data\n";
-            }
-        }
-        else {
-            $key = sha1('1', true);
-            $iv = substr($data, 0, 16);
-
-            $message = decryptAES128CBC(substr($data, 16), $key, $iv);
-
-            // kind of dirty I guess, but gets the job done.
-            $obj = json_decode($message);
-            if (!is_object($obj)) {
-                $key = sha1($this->Pminus1, true);
-                $iv = substr($data, 0, 16);
-
-                $message = decryptAES128CBC(substr($data, 16), $key, $iv);
-            }
-
-            print "M: sniffed: $message\n";
-        }
-        return $data;
-    }
-}
-
-
-print "Testing normal comms:\n\n";
-
-$A = new ConversationEntity('A', new DH);
-$B = new ConversationEntity('B', new DH);
-
-$M = new MITM($A, $B);
-
-$A->groupNeg();
-$A->send('Hello there!');
-$B->send('Hi!');
-
-
-
-print "\nMITM with g = 1:\n\n";
-
-$A = new ConversationEntity('A', new DH);
-$B = new ConversationEntity('B', new DH);
-
-$M = new MITM1($A, $B);
-
-$A->groupNeg();
-$A->send('Hello there!');
-$B->send('Hi!');
-
-
-
-print "\nMITM with g = p:\n\n";
-
-$A = new ConversationEntity('A', new DH);
-$B = new ConversationEntity('B', new DH);
-
-$M = new MITMP($A, $B);
-
-$A->groupNeg();
-$A->send('Hello there!');
-$B->send('Hi!');
-
-
-
-print "\nMITM with g = p - 1:\n\n";
-
-$A = new ConversationEntity('A', new DH);
-$B = new ConversationEntity('B', new DH);
-
-$M = new MITMPminus1($A, $B);
-
-$A->groupNeg();
-$A->send('Hello there!');
-$B->send('Hi!');
