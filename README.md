@@ -51,7 +51,7 @@ Progress:
   - [x] 36. Implement Secure Remote Password (SRP)
   - [x] 37. Break SRP with a zero key
   - [x] 38. Offline dictionary attack on simplified SRP
-  - [ ] 39. Implement RSA
+  - [x] 39. Implement RSA
   - [ ] 40. Implement an E=3 RSA Broadcast attack
 - [ ] **Set 6: RSA and DSA**
   - [ ] 41. Implement unpadded message recovery oracle
