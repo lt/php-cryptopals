@@ -12,4 +12,4 @@ On the other hand, **our favorite cryptanalytic attack ever** is in this set (yo
 - [x] 37. Break SRP with a zero key
 - [x] 38. Offline dictionary attack on simplified SRP
 - [x] 39. Implement RSA
-- [ ] 40. Implement an E=3 RSA Broadcast attack
+- [x] 40. Implement an E=3 RSA Broadcast attack

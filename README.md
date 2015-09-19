@@ -52,7 +52,7 @@ Progress:
   - [x] 37. Break SRP with a zero key
   - [x] 38. Offline dictionary attack on simplified SRP
   - [x] 39. Implement RSA
-  - [ ] 40. Implement an E=3 RSA Broadcast attack
+  - [x] 40. Implement an E=3 RSA Broadcast attack
 - [ ] **Set 6: RSA and DSA**
   - [ ] 41. Implement unpadded message recovery oracle
   - [ ] 42. Bleichenbacher's e=3 RSA Attack
