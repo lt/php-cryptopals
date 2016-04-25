@@ -2,65 +2,47 @@
 
 namespace Cryptopals\Set2\Challenge15;
 
-use Cryptopals\Set2\Challenge9\Solution9;
+use Cryptopals\Solution;
 
-class Solution15 extends Solution9
+class Solution15 extends Solution
 {
-    protected function getPKCS7Len($data): int
-    {
-        $dataLen = strlen($data);
-        $padChar = $data[$dataLen - 1];
-        $padLen = ord($padChar);
-
-        if ($padLen > $dataLen || $padLen === 0) {
-            throw new \Exception('Invalid padding');
-        }
-
-        for ($i = $dataLen - $padLen; $i < $dataLen; $i++) {
-            if ($data[$i] !== $padChar) {
-                throw new \Exception('Invalid padding');
-            }
-        }
-
-        return $padLen;
-    }
-
-    protected function removePKCS7Padding($data)
-    {
-        $padLen = $this->getPKCS7Len($data);
-        if ($padLen) {
-            return substr($data, 0, -$padLen);
-        }
-        return $data;
-    }
-
     protected function execute(): bool
     {
-        $success = 1;
+        $pkcs7 = new PKCS7;
+        $success = true;
 
+        print 'Testing \'ICE ICE BABY\x04\x04\x04\x04\' has pad length of 4: ';
         try {
-            $success &= ($this->getPKCS7Len("ICE ICE BABY\x04\x04\x04\x04") === 4);
+            $success = $success && ($pkcs7->getPaddingLength("ICE ICE BABY\x04\x04\x04\x04") === 4);
+            print "OK\n";
         }
         catch (\Exception $e) {
-            $success &= false;
+            $success = false;
+            print "FAIL\n";
         }
 
+        print 'Testing \'ICE ICE BABY\x05\x05\x05\x05\' is invalid: ';
         try {
-            $this->getPKCS7Len("ICE ICE BABY\x05\x05\x05\x05");
-            $success &= false;
+            $pkcs7->depad("ICE ICE BABY\x05\x05\x05\x05");
+            $success = false;
+            print "FAIL\n";
         }
         catch (\Exception $e) {
-            $success &= true;
+            $success = $success && true;
+            print "OK\n";
         }
 
+        print 'Testing \'ICE ICE BABY\x01\x02\x03\x04\' is invalid: ';
         try {
-            $this->getPKCS7Len("ICE ICE BABY\x01\x02\x03\x04");
-            $success &= false;
+            $pkcs7->depad("ICE ICE BABY\x01\x02\x03\x04");
+            $success = false;
+            print "FAIL\n";
         }
         catch (\Exception $e) {
-            $success &= true;
+            $success = $success && true;
+            print "OK\n";
         }
 
-        return (bool)$success;
+        return $success;
     }
 }
