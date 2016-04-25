@@ -2,15 +2,18 @@
 
 namespace Cryptopals\Set5\Challenge35;
 
+use AES\CBC;
+use Cryptopals\Set2\Challenge15\PKCS7;
+
 class MITM
 {
     protected $cbc;
-    protected $pad;
+    protected $pkcs7;
     
     function __construct(ConversationEntity $A, ConversationEntity $B)
     {
-        $this->cbc = new \AES\Mode\CBC();
-        $this->pad = new \AES\Padding\PKCS7();
+        $this->cbc = new CBC;
+        $this->pkcs7 = new PKCS7;
         
         $A->onSend = function(string $data) use ($B) {
             $B->receive($this->sniffData($data));

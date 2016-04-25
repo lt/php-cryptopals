@@ -2,39 +2,42 @@
 
 namespace Cryptopals\Set2\Challenge11;
 
+use AES\CBC;
+use AES\ECB;
+use AES\Key;
 use Cryptopals\Set1\Challenge8\Solution8;
+use Cryptopals\Set2\Challenge9\PKCS7;
 
 class Solution11 extends Solution8
 {
     protected $ecb;
     protected $cbc;
-
-    protected $pad;
+    protected $pkcs7;
 
     protected function setUp(): bool
     {
-        $this->ecb = new \AES\Mode\ECB();
-        $this->cbc = new \AES\Mode\CBC();
-
-        $this->pad = new \AES\Padding\PKCS7();
+        $this->ecb = new ECB;
+        $this->cbc = new CBC;
+        $this->pkcs7 = new PKCS7;
 
         return true;
     }
 
     protected function randomlyEncryptECBorCBC(string $data)
     {
-        $key = random_bytes(16);
+        $key = new Key(random_bytes(16));
+        $iv = str_repeat("\0", 16);
+
         $pad1 = random_bytes(mt_rand(5, 10));
         $pad2 = random_bytes(mt_rand(5, 10));
+
         $message = "$pad1$data$pad2";
 
         if (mt_rand(0, 1)) {
-            $ctx = new \AES\Context\CBC($key, str_repeat("\0", 16));
-            return $this->cbc->encrypt($ctx, $message . $this->pad->getPadding($message));
+            return $this->cbc->encrypt($key, $iv, $this->pkcs7->pad($message));
         }
 
-        $ctx = new \AES\Context\ECB($key);
-        return $this->ecb->encrypt($ctx, $message . $this->pad->getPadding($message));
+        return $this->ecb->encrypt($key, $this->pkcs7->pad($message));
     }
 
     protected function execute(): bool
@@ -51,7 +54,7 @@ class Solution11 extends Solution8
                 $ecb++;
             }
         }
-        print "$ecb samples detected as ECB mode\n";
+        print "{$ecb} samples detected as ECB mode\n";
 
         return $ecb && round(5000 / $ecb) === 2.0;
     }

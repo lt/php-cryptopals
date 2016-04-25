@@ -2,9 +2,11 @@
 
 namespace Cryptopals\Set3\Challenge20;
 
-use Cryptopals\Set3\Challenge18\Solution18;
+use AES\Key;
+use Cryptopals\Set1\Challenge6\Solution6;
+use Cryptopals\Set3\Challenge18\AESCTR;
 
-class Solution20 extends Solution18
+class Solution20 extends Solution6
 {
     protected function scoreSingleByteXORStrings(array $strings): array
     {
@@ -26,10 +28,13 @@ class Solution20 extends Solution18
 
     protected function execute(): bool
     {
-        $this->ctx = new \AES\Context\ECB(random_bytes(16));
+        $ctr = new AESCTR;
+        $key = new Key(random_bytes(16));
 
         $plaintexts = array_map('base64_decode', file(__DIR__ . '/20.txt', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES));
-        $ciphertexts = array_map([$this, 'encrypt'], $plaintexts);
+        $ciphertexts = array_map(function ($pt) use ($ctr, $key) {
+            return $ctr->encrypt($key, str_repeat("\0", 8), $pt);
+        }, $plaintexts);
 
         // challenge text says use a common length, but we can recover more if we don't
         // this is because after transposition there's still enough data to statistically recover more

@@ -2,39 +2,25 @@
 
 namespace Cryptopals\Set1\Challenge7;
 
+use AES\ECB;
+use AES\Key;
 use Cryptopals\Solution;
 
 class Solution7 extends Solution
 {
-    protected $aes;
-    protected $ctx;
-    protected $pad;
-
-    protected function setUp(): bool
+    protected function execute(): bool
     {
         // This uses my own AES library
         // Technically I completed this challenge elsewhere
-        $this->aes = new \AES\Mode\ECB();
-        $this->ctx = new \AES\Context\ECB('YELLOW SUBMARINE');
-        $this->pad = new \AES\Padding\PKCS7();
-
-        return true;
-    }
-
-    protected function execute(): bool
-    {
+        $ecb = new ECB;
+        $key = new Key('YELLOW SUBMARINE');
+        
         $encrypted = base64_decode(file_get_contents(__DIR__ . '/7.txt'));
-
-        $decrypted = $this->aes->decrypt($this->ctx, $encrypted);
-
-        // From previous runs I know this is padded.
-        $padLen = $this->pad->getPadLen($decrypted);
+        $decrypted = $ecb->decrypt($key, $encrypted);
 
         print "Decrypted data:\n";
-        print substr($decrypted, 0, -$padLen) . "\n";
+        print "{$decrypted}\n";
 
-        // Ok this isn't really a true/false success one, but after a couple
-        // of runs, I know the output is correct.
-        return true;
+        return $ecb->encrypt($key, $decrypted) === $encrypted;
     }
 }

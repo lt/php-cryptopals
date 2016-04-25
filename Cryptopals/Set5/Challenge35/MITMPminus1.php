@@ -2,6 +2,8 @@
 
 namespace Cryptopals\Set5\Challenge35;
 
+use AES\Key;
+
 class MITMPminus1 extends MITM
 {
     private $Pminus1;
@@ -22,22 +24,20 @@ class MITMPminus1 extends MITM
             }
         }
         else {
-            $key = substr(sha1('1', true), 0, 16);
+            $key = new Key(substr(sha1('1', true), 0, 16));
             $iv = substr($data, 0, 16);
 
-            $ctx = new \AES\Context\CBC($key, $iv);
-            $message = $this->cbc->decrypt($ctx, substr($data, 16));
-            $message = substr($message, 0, -$this->pad->getPadLen($message));
+            $message = $this->cbc->decrypt($key, $iv, substr($data, 16));
+            $message = $this->pkcs7->depad($message);
 
             // kind of dirty I guess, but gets the job done.
             $obj = json_decode($message);
             if (!is_object($obj)) {
-                $key = substr(sha1($this->Pminus1, true), 0, 16);
+                $key = new Key(substr(sha1($this->Pminus1, true), 0, 16));
                 $iv = substr($data, 0, 16);
 
-                $ctx = new \AES\Context\CBC($key, $iv);
-                $message = $this->cbc->decrypt($ctx, substr($data, 16));
-                $message = substr($message, 0, -$this->pad->getPadLen($message));
+                $message = $this->cbc->decrypt($key, $iv, substr($data, 16));
+                $message = $this->pkcs7->depad($message);
             }
 
             print "M: sniffed: $message\n";

@@ -18,7 +18,7 @@
   "require": {
     "php-64bit": ">=7.0",
     "ext-gmp": "*",
-    "lt/PHP-AES": "dev-master#dc6ff829835f0f3c9aeb34c4b53ead55e82a78fd"
+    "leigh/PHP-AES": "dev-master#4ee9e5ec9015b595a76af44f296b760bfd7aa6ef"
   },
   "autoload": {
     "psr-4": {

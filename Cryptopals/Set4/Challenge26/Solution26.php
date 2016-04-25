@@ -2,16 +2,19 @@
 
 namespace Cryptopals\Set4\Challenge26;
 
-use Cryptopals\Set3\Challenge18\Solution18;
+use AES\Key;
+use Cryptopals\Set3\Challenge18\AESCTR;
+use Cryptopals\Solution;
 
-class Solution26 extends Solution18
+class Solution26 extends Solution
 {
+    protected $ctr;
+    protected $key;
+    
     protected function setUp(): bool
     {
-        $this->ecb = new \AES\Mode\ECB();
-        $this->ctx = new \AES\Context\ECB(random_bytes(16));
-        $this->pad = new \AES\Padding\PKCS7();
-
+        $this->ctr = new AESCTR;
+        $this->key = new Key(random_bytes(16));
         return true;
     }
 
@@ -26,12 +29,12 @@ class Solution26 extends Solution18
             '', ';', PHP_QUERY_RFC3986
         );
 
-        return $this->encrypt($data);
+        return $this->ctr->encrypt($this->key, str_repeat("\0", 8), $data);
     }
 
     protected function isAdmin(string $query): bool
     {
-        $data = $this->decrypt($query);
+        $data = $this->ctr->decrypt($this->key, str_repeat("\0", 8), $query);
 
         return strpos($data, ';admin=true;') !== false;
     }
@@ -45,11 +48,15 @@ class Solution26 extends Solution18
 
         $badData = 'bbbb;admin=true';
         $goodData = 'bbbbbbbbbbbbbbb';
-        $diff = $badData ^ $goodData;
+        $badBlock = $badData ^ $goodData;
+
+        print "We sent:       {$goodData}\n";
+        print "We want:       {$badData}\n";
+        print 'Bit flip mask: ' . bin2hex($badBlock) . "\n";
 
         $query = $this->getQuery($goodData);
 
-        $query = substr($query, 0, 32) . (substr($query, 32, 15) ^ $diff) . substr($query, 47);
+        $query = substr($query, 0, 32) . (substr($query, 32, 15) ^ $badBlock) . substr($query, 47);
 
         return $this->isAdmin($query);
     }

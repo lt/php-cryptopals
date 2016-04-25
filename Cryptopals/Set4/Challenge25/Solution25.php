@@ -2,10 +2,17 @@
 
 namespace Cryptopals\Set4\Challenge25;
 
+use AES\ECB;
+use AES\Key;
+use Cryptopals\Set2\Challenge15\PKCS7;
+use Cryptopals\Set3\Challenge18\AESCTR;
 use Cryptopals\Set3\Challenge18\Solution18;
 
 class Solution25 extends Solution18
 {
+    protected $ctr;
+    protected $key;
+
     protected $plaintext = '';
     protected $ciphertext = '';
     protected $nonce = '';
@@ -16,21 +23,22 @@ class Solution25 extends Solution18
 
         $this->plaintext = substr($this->plaintext, 0, $offset) . $newText . substr($this->plaintext, $offset + $newLen);
 
-        return $this->encrypt($this->plaintext, $this->nonce);
+        return $this->ctr->encrypt($this->key, $this->nonce, $this->plaintext);
     }
 
     protected function setUp(): bool
     {
-        $this->ecb = new \AES\Mode\ECB();
-        $this->ctx = new \AES\Context\ECB('YELLOW SUBMARINE');
-        $this->pad = new \AES\Padding\PKCS7();
-
-        $this->plaintext = $this->ecb->decrypt($this->ctx, base64_decode(file_get_contents(__DIR__ . '/25.txt')));
-        $this->plaintext = substr($this->plaintext, 0, -$this->pad->getPadLen($this->plaintext));
-
+        $ecb = new ECB;
+        $this->ctr = new AESCTR;
+        $this->key = new Key(random_bytes(16));
         $this->nonce = random_bytes(8);
-        $this->ctx = new \AES\Context\ECB(random_bytes(16));
-        $this->ciphertext = $this->encrypt($this->plaintext, $this->nonce);
+
+        $pkcs7 = new PKCS7;
+
+        $plaintext = $ecb->decrypt(new Key('YELLOW SUBMARINE'), base64_decode(file_get_contents(__DIR__ . '/25.txt')));
+        $this->plaintext = $pkcs7->depad($plaintext);
+
+        $this->ciphertext = $this->ctr->encrypt($this->key, $this->nonce, $this->plaintext);
 
         return true;
     }

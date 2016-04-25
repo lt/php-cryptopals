@@ -2,9 +2,11 @@
 
 namespace Cryptopals\Set3\Challenge19;
 
-use Cryptopals\Set3\Challenge18\Solution18;
+use AES\Key;
+use Cryptopals\Set3\Challenge18\AESCTR;
+use Cryptopals\Solution;
 
-class Solution19 extends Solution18
+class Solution19 extends Solution
 {
     protected $plaintexts = [
         'SSBoYXZlIG1ldCB0aGVtIGF0IGNsb3NlIG9mIGRheQ==',
@@ -51,10 +53,13 @@ class Solution19 extends Solution18
 
     protected function execute(): bool
     {
-        $this->ctx = new \AES\Context\ECB(random_bytes(16));
+        $ctr = new AESCTR;
+        $key = new Key(random_bytes(16));
 
         $plaintexts = array_map('base64_decode', $this->plaintexts);
-        $ciphertexts = array_map([$this, 'encrypt'], $plaintexts);
+        $ciphertexts = array_map(function ($pt) use ($ctr, $key) {
+            return $ctr->encrypt($key, str_repeat("\0", 8), $pt);
+        }, $plaintexts);
 
         // "Attack this cryptosystem piecemeal: guess letters, use expected English language frequence to validate guesses, catch common English trigrams, and so on."
         // if (c1 ^ guess ^ cN) looks reasonable, keep it.

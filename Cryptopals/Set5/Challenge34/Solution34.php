@@ -2,18 +2,21 @@
 
 namespace Cryptopals\Set5\Challenge34;
 
+use AES\CBC;
+use AES\Key;
+use Cryptopals\Set2\Challenge15\PKCS7;
 use Cryptopals\Set5\Challenge33\DH;
 use Cryptopals\Solution;
 
 class Solution34 extends Solution
 {
     protected $cbc;
-    protected $pad;
+    protected $pkcs7;
 
     protected function setUp(): bool
     {
-        $this->cbc = new \AES\Mode\CBC();
-        $this->pad = new \AES\Padding\PKCS7();
+        $this->cbc = new CBC;
+        $this->pkcs7 = new PKCS7;
 
         return true;
     }
@@ -57,12 +60,11 @@ class Solution34 extends Solution
                 $B->receive(json_encode($obj));
             }
             else {
-                $key = substr(sha1($evilShared, true), 0, 16);
+                $key = new Key(substr(sha1($evilShared, true), 0, 16));
                 $iv = substr($data, 0, 16);
 
-                $ctx = new \AES\Context\CBC($key, $iv);
-                $message = $this->cbc->decrypt($ctx, substr($data, 16));
-                $message = substr($message, 0, -$this->pad->getPadLen($message));
+                $message = $this->cbc->decrypt($key, $iv, substr($data, 16));
+                $message = $this->pkcs7->depad($message);
 
                 print "M: sniffed: $message\n";
             }
@@ -79,12 +81,11 @@ class Solution34 extends Solution
                 $A->receive(json_encode($obj));
             }
             else {
-                $key = substr(sha1($evilShared, true), 0, 16);
+                $key = new Key(substr(sha1($evilShared, true), 0, 16));
                 $iv = substr($data, 0, 16);
 
-                $ctx = new \AES\Context\CBC($key, $iv);
-                $message = $this->cbc->decrypt($ctx, substr($data, 16));
-                $message = substr($message, 0, -$this->pad->getPadLen($message));
+                $message = $this->cbc->decrypt($key, $iv, substr($data, 16));
+                $message = $this->pkcs7->depad($message);
 
                 print "M: sniffed: $message\n";
             }

@@ -16,21 +16,22 @@
 
 namespace Cryptopals\Set2\Challenge14;
 
+use AES\ECB;
+use AES\Key;
 use Cryptopals\Set2\Challenge13\Solution13;
+use Cryptopals\Set2\Challenge9\PKCS7;
 
 class Solution14 extends Solution13
 {
     protected $ecb;
-    protected $ctx;
-    protected $pad;
+    protected $key;
+    protected $pkcs7;
 
     protected function setUp(): bool
     {
-        $key = random_bytes(16);
-
-        $this->ecb = new \AES\Mode\ECB();
-        $this->ctx = new \AES\Context\ECB($key);
-        $this->pad = new \AES\Padding\PKCS7();
+        $this->ecb = new ECB;
+        $this->key = new Key(random_bytes(16));
+        $this->pkcs7 = new PKCS7;
 
         return true;
     }
@@ -42,7 +43,7 @@ class Solution14 extends Solution13
         $prefix = random_bytes(mt_rand(1, 128));
         $message = $prefix . $myString . $unknownString;
 
-        return $this->ecb->encrypt($this->ctx, $message . $this->pad->getPadding($message));
+        return $this->ecb->encrypt($this->key, $this->pkcs7->pad($message));
     }
 
     protected function detectBlockSize(): int

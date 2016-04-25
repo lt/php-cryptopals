@@ -2,6 +2,9 @@
 
 namespace Cryptopals\Set5\Challenge35;
 
+use AES\CBC;
+use AES\Key;
+use Cryptopals\Set2\Challenge15\PKCS7;
 use Cryptopals\Set5\Challenge33\DH;
 
 class ConversationEntity
@@ -16,15 +19,15 @@ class ConversationEntity
     public $onSend;
 
     protected $cbc;
-    protected $pad;
+    protected $pkcs7;
 
     function __construct(string $name, DH $dh)
     {
         $this->name = $name;
         $this->dh = $dh;
 
-        $this->cbc = new \AES\Mode\CBC();
-        $this->pad = new \AES\Padding\PKCS7();
+        $this->cbc = new CBC;
+        $this->pkcs7 = new PKCS7;
 
         $this->priv = $this->dh->generatePrivate();
     }
@@ -78,11 +81,10 @@ class ConversationEntity
         $data = json_encode($obj);
 
         if (!is_null($this->shared)) {
-            $key = substr(sha1($this->shared, true), 0, 16);
+            $key = new Key(substr(sha1($this->shared, true), 0, 16));
             $iv = random_bytes(16);
 
-            $ctx = new \AES\Context\CBC($key, $iv);
-            $data = $iv . $this->cbc->encrypt($ctx, $data . $this->pad->getPadding($data));
+            $data = $iv . $this->cbc->encrypt($key, $iv, $this->pkcs7->pad($data));
         }
 
         $dataLen = strlen($data);
@@ -99,13 +101,11 @@ class ConversationEntity
         print "{$this->name}: received $dataLen bytes\n";
 
         if (!is_null($this->shared)) {
-
-            $key = substr(sha1($this->shared, true), 0, 16);
+            $key = new Key(substr(sha1($this->shared, true), 0, 16));
             $iv = substr($data, 0, 16);
 
-            $ctx = new \AES\Context\CBC($key, $iv);
-            $data = $this->cbc->decrypt($ctx, substr($data, 16));
-            $data = substr($data, 0, -$this->pad->getPadLen($data));
+            $data = $this->cbc->decrypt($key, $iv, substr($data, 16));
+            $data = $this->pkcs7->depad($data);
         }
 
         $obj = json_decode($data);

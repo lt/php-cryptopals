@@ -2,47 +2,20 @@
 
 namespace Cryptopals\Set3\Challenge18;
 
-use Cryptopals\Set1\Challenge6\Solution6;
+use AES\Key;
+use Cryptopals\Solution;
 
-class Solution18 extends Solution6
+class Solution18 extends Solution
 {
-    protected $ecb;
-    protected $ctx;
-    protected $pad;
-
-    protected function setUp(): bool
-    {
-        $this->ecb = new \AES\Mode\ECB();
-        $this->ctx = new \AES\Context\ECB('YELLOW SUBMARINE');
-        $this->pad = new \AES\Padding\PKCS7();
-
-        return true;
-    }
-
-    // Not using the AES lib fully because the counter is implemented funny in the challenge
-    function encrypt(string $message, string $nonce = "\0\0\0\0\0\0\0\0"): string
-    {
-        $blocks = str_split($message, 16);
-        $counter = 0;
-
-        foreach ($blocks as &$block) {
-            $block ^= $this->ecb->encrypt($this->ctx, $nonce . pack('P', $counter++));
-        }
-
-        return implode($blocks);
-    }
-
-    function decrypt(string $message, string $nonce = "\0\0\0\0\0\0\0\0"): string
-    {
-        return $this->encrypt($message, $nonce);
-    }
-
     protected function execute(): bool
     {
+        $ctr = new AESCTR;
+        $key = new Key('YELLOW SUBMARINE');
+
         $ciphertext = base64_decode('L77na/nrFsKvynd6HzOoG7GHTLXsTVu9qvY/2syLXzhPweyyMTJULu/6/kXX0KSvoOLSFQ==');
 
-        $plaintext = $this->decrypt($ciphertext);
-        $homebrewCipher = $this->encrypt($plaintext);
+        $plaintext = $ctr->decrypt($key, str_repeat("\0", 8), $ciphertext);
+        $homebrewCipher = $ctr->encrypt($key, str_repeat("\0", 8), $plaintext);
 
         print "Decrypted data:\n";
         print "$plaintext\n";

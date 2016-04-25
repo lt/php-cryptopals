@@ -2,21 +2,22 @@
 
 namespace Cryptopals\Set2\Challenge13;
 
+use AES\ECB;
+use AES\Key;
 use Cryptopals\Set1\Challenge8\Solution8;
+use Cryptopals\Set2\Challenge9\PKCS7;
 
 class Solution13 extends Solution8
 {
     protected $ecb;
-    protected $ctx;
-    protected $pad;
+    protected $key;
+    protected $pkcs7;
 
     protected function setUp(): bool
     {
-        $key = random_bytes(16);
-
-        $this->ecb = new \AES\Mode\ECB();
-        $this->ctx = new \AES\Context\ECB($key);
-        $this->pad = new \AES\Padding\PKCS7();
+        $this->ecb = new ECB;
+        $this->key = new Key(random_bytes(16));
+        $this->pkcs7 = new PKCS7;
 
         return true;
     }
@@ -34,12 +35,12 @@ class Solution13 extends Solution8
     {
         $profile = $this->profileFor($email);
 
-        return $this->ecb->encrypt($this->ctx, $profile . $this->pad->getPadding($profile));
+        return $this->ecb->encrypt($this->key, $this->pkcs7->pad($profile));
     }
 
     protected function decryptedProfile(string $ciphertext): array
     {
-        $decypted = $this->ecb->decrypt($this->ctx, $ciphertext);
+        $decypted = $this->ecb->decrypt($this->key, $ciphertext);
 
         parse_str($decypted, $profile);
         return $profile;
@@ -53,7 +54,7 @@ class Solution13 extends Solution8
 
         $padToAlignEmail = 16 - strlen('email=');
 
-        // pad until we cause a block count increase, then add 3 so we can chop off "user"
+        // pad until we cause a block count increase, then add 4 so we can chop off "user"
         // ....f|0......
         // role=|user...
 
@@ -84,8 +85,8 @@ class Solution13 extends Solution8
         $decryptedProfile = $this->decryptedProfile($bakedAuth);
 
         print "Decrypted profile:\n";
-        var_dump($decryptedProfile);
+        print_r($decryptedProfile);
 
-        return true;
+        return $decryptedProfile['role'] === 'admin';
     }
 }
