@@ -63,7 +63,7 @@ class Solution31 extends Solution28
         $crackedSig = str_repeat("\0", 20);
 
         print "This will take a while.\n\n";
-        print bin2hex($this->apiSign($file)) . "\n";
+        print bin2hex($this->apiSign($file)) . "\n\n";
 
         for ($x = 0; $x < 20; $x++) {
             $timings = [];

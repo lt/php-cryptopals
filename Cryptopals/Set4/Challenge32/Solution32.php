@@ -26,7 +26,8 @@ class Solution32 extends Solution31
         $file = 'my evil file';
         $crackedSig = str_repeat("\0", 20);
 
-        print "This will take a while.\n\n";
+        print "This will take an even longer while.\n\n";
+        print bin2hex($this->apiSign($file)) . "\n\n";
 
         for ($x = 0; $x < 20; $x++) {
             $timings = [];
