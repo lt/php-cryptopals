@@ -2,20 +2,11 @@
 
 namespace Cryptopals\Set3\Challenge23;
 
-use Cryptopals\Set3\Challenge21\Solution21;
+use Cryptopals\Solution;
+use MersenneTwister\MT;
 
-class Solution23 extends Solution21
+class Solution23 extends Solution
 {
-    protected $vanillaMT;
-
-    protected function setUp(): bool
-    {
-        $this->vanillaMT = new Solution21;
-        $this->vanillaMT->init(time()); // :D :D
-
-        return true;
-    }
-
     protected function untemper($value)
     {
         $y = $value ^ ($value >> 18); // Only 14 bits affected, so we can restore them all at once
@@ -34,16 +25,22 @@ class Solution23 extends Solution21
 
     protected function execute(): bool
     {
-        $success = 1;
+        $mt = new MT;
+        $mtClone= new ClonableMT;
+        
+        $success = true;
+        $state = [];
+
         for ($i = 0; $i < 624; $i++) {
-            $this->MT[] = $this->untemper($this->vanillaMT->int32());
+            $state[] = $this->untemper($mt->int32());
         }
-        $this->index = $i;
+        $mtClone->setState($state);
+        $mtClone->setIndex($i);
 
         print "Original:      Clone:\n";
         for ($i = 0; $i < 10; $i++) {
-            $original = $this->vanillaMT->int32();
-            $clone = $this->int32();
+            $original = $mt->int32();
+            $clone = $mtClone->int32();
             $success &= ($original === $clone);
 
             print str_pad((string)$original, 15) . $clone . "\n";

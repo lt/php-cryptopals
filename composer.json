@@ -13,12 +13,17 @@
     {
       "type": "vcs",
       "url": "https://github.com/lt/PHP-AES"
+    },
+    {
+      "type": "vcs",
+      "url": "https://github.com/lt/PHP-MT19937"
     }
   ],
   "require": {
     "php-64bit": ">=7.0",
     "ext-gmp": "*",
-    "leigh/PHP-AES": "dev-master#4ee9e5ec9015b595a76af44f296b760bfd7aa6ef"
+    "leigh/PHP-AES": "dev-master#4ee9e5ec9015b595a76af44f296b760bfd7aa6ef",
+    "leigh/mt-rand": "dev-master#6e3c7a31f791e929f341b2946dcf987dd04b1051"
   },
   "autoload": {
     "psr-4": {

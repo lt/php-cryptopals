@@ -2,22 +2,24 @@
 
 namespace Cryptopals\Set3\Challenge24;
 
-use Cryptopals\Set3\Challenge21\Solution21;
+use Cryptopals\Solution;
+use MersenneTwister\MT;
 
-class Solution24 extends Solution21
+class Solution24 extends Solution
 {
     function encrypt($data, $seed = 0)
     {
         $seed &= 0xffff;
 
-        $this->init($seed);
+        $mt = new MT;
+        $mt->init($seed);
 
         $dataLen = strlen($data);
         $blocks = ceil($dataLen / 4);
         $keyStream = [];
 
         while ($blocks--) {
-            $keyStream[] = $this->int32();
+            $keyStream[] = $mt->int32();
         }
 
         return $data ^ pack('N*', ...$keyStream);
