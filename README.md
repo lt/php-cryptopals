@@ -71,3 +71,12 @@ Progress:
   - [ ] 54. Kelsey and Kohno's Nostradamus Attack
   - [ ] 55. MD4 Collisions
   - [ ] 56. RC4 Single-Byte Biases
+- [ ] **Set 8: Abstract Algebra**
+  - [ ] 57. Diffie-Hellman Revisited: Small Subgroup Confinement
+  - [ ] 58. Pollard's Method for Catching Kangaroos
+  - [ ] 59. Elliptic Curve Diffie-Hellman and Invalid-Curve Attacks
+  - [ ] 60. Single-Coordinate Ladders and Insecure Twists
+  - [ ] 61. Duplicate-Signature Key Selection in ECDSA (and RSA)
+  - [ ] 62. Key-Recovery Attacks on ECDSA with Biased Nonces
+  - [ ] 63. Key-Recovery Attacks on GCM with Repeated Nonces
+  - [ ] 64. Key-Recovery Attacks on GCM with a Truncated MAC
