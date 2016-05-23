@@ -2,17 +2,7 @@
 
 namespace Cryptopals;
 
-abstract class Solution
+interface Solution
 {
-    protected function setUp(): bool
-    {
-        return true;
-    }
-
-    abstract protected function execute(): bool;
-
-    final function runSolution(): bool
-    {
-        return $this->setUp() && $this->execute();
-    }
+    function execute(): bool;
 }

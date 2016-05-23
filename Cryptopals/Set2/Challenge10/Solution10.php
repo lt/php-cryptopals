@@ -3,25 +3,32 @@
 namespace Cryptopals\Set2\Challenge10;
 
 use AES\CBC;
-use AES\Key;
+use Cryptopals\Set1\Challenge7\YellowSubmarineKey;
 use Cryptopals\Solution;
 
-class Solution10 extends Solution
+class Solution10 implements Solution
 {
-    protected function execute(): bool
+    protected $cbc;
+    protected $key;
+
+    // This uses my own AES library
+    // Technically I completed this challenge elsewhere
+    function __construct(CBC $ecb, YellowSubmarineKey $key)
     {
-        // This uses my own AES library
-        // Technically I completed this challenge elsewhere
-        $cbc = new CBC;
-        $key = new Key('YELLOW SUBMARINE');
+        $this->cbc = $ecb;
+        $this->key = $key;
+    }
+
+    function execute(): bool
+    {
         $iv = str_repeat("\0", 16);
 
         $encrypted = base64_decode(file_get_contents(__DIR__ . '/10.txt'));
-        $decrypted = $cbc->decrypt($key, $iv, $encrypted);
+        $decrypted = $this->cbc->decrypt($this->key, $iv, $encrypted);
 
         print "Decrypted data:\n";
         print "{$decrypted}\n";
 
-        return $cbc->encrypt($key, $iv, $decrypted) === $encrypted;
+        return $this->cbc->encrypt($this->key, $iv, $decrypted) === $encrypted;
     }
 }

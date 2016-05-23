@@ -4,28 +4,27 @@ namespace Cryptopals\Set2\Challenge11;
 
 use AES\CBC;
 use AES\ECB;
-use AES\Key;
-use Cryptopals\Set1\Challenge8\Solution8;
+use Cryptopals\Set1\Challenge7\RandomKey;
+use Cryptopals\Set1\Challenge8\DetectECB;
 use Cryptopals\Set2\Challenge9\PKCS7;
+use Cryptopals\Solution;
 
-class Solution11 extends Solution8
+class Solution11 implements Solution
 {
     protected $ecb;
     protected $cbc;
-    protected $pkcs7;
+    protected $key;
 
-    protected function setUp(): bool
+    function __construct(ECB $ecb, CBC $cbc, RandomKey $key)
     {
-        $this->ecb = new ECB;
-        $this->cbc = new CBC;
-        $this->pkcs7 = new PKCS7;
-
-        return true;
+        $this->ecb = $ecb;
+        $this->cbc = $cbc;
+        $this->key = $key;
     }
 
     protected function randomlyEncryptECBorCBC(string $data)
     {
-        $key = new Key(random_bytes(16));
+        $this->key->newKey();
         $iv = str_repeat("\0", 16);
 
         $pad1 = random_bytes(mt_rand(5, 10));
@@ -34,13 +33,13 @@ class Solution11 extends Solution8
         $message = "$pad1$data$pad2";
 
         if (mt_rand(0, 1)) {
-            return $this->cbc->encrypt($key, $iv, $this->pkcs7->pad($message));
+            return $this->cbc->encrypt($this->key, $iv, PKCS7::pad($message));
         }
 
-        return $this->ecb->encrypt($key, $this->pkcs7->pad($message));
+        return $this->ecb->encrypt($this->key, PKCS7::pad($message));
     }
 
-    protected function execute(): bool
+    function execute(): bool
     {
         // so the trick is to feed the black box something that will trigger ECBs weakness regardless of padding
         // this means we need at least 3 blocks of repeated data (with padding this reduces to 2 blocks)
@@ -50,7 +49,7 @@ class Solution11 extends Solution8
         $ecb = 0;
         for ($i = 0; $i < 5000; $i++) {
             $ciphertext = $this->randomlyEncryptECBorCBC($plaintext);
-            if ($this->repeatedBlockCount($ciphertext)) {
+            if (DetectECB::repeatedBlockCount($ciphertext)) {
                 $ecb++;
             }
         }

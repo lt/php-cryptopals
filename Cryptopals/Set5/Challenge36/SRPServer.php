@@ -7,10 +7,9 @@ class SRPServer extends SRP
     private $v;
     private $b;
 
-    function __construct(string $I, string $P)
+    function setCredentials(string $I, string $P)
     {
-        parent::__construct($I, $P);
-
+        parent::setCredentials($I, $P);
         $this->salt = gmp_strval(gmp_random(), 16);
         $this->x = gmp_init(hash('sha256', $this->salt . $P), 16);
         $this->v = gmp_powm($this->g, $this->x, $this->N);

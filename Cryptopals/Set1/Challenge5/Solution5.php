@@ -4,7 +4,7 @@ namespace Cryptopals\Set1\Challenge5;
 
 use Cryptopals\Solution;
 
-class Solution5 extends Solution
+class Solution5 implements Solution
 {
     protected function repeatingKeyXOR(string $input, string $key): string
     {
@@ -18,7 +18,7 @@ class Solution5 extends Solution
         return $input;
     }
 
-    protected function execute(): bool
+    function execute(): bool
     {
         $input = "Burning 'em, if you ain't quick and nimble\nI go crazy when I hear a cymbal";
         $key = 'ICE';

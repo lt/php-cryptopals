@@ -8,12 +8,10 @@ use Cryptopals\Set2\Challenge15\PKCS7;
 class MITM
 {
     protected $cbc;
-    protected $pkcs7;
     
-    function __construct(ConversationEntity $A, ConversationEntity $B)
+    function __construct(CBC $cbc, ConversationEntity $A, ConversationEntity $B)
     {
-        $this->cbc = new CBC;
-        $this->pkcs7 = new PKCS7;
+        $this->cbc = $cbc;
         
         $A->onSend = function(string $data) use ($B) {
             $B->receive($this->sniffData($data));

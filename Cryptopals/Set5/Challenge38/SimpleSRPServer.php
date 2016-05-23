@@ -7,9 +7,9 @@ class SimpleSRPServer extends SimpleSRP
     private $v;
     private $b;
 
-    function __construct(string $I, string $P)
+    function setCredentials(string $I, string $P)
     {
-        parent::__construct($I, $P);
+        parent::setCredentials($I, $P);
 
         $this->salt = gmp_strval(gmp_random(), 16);
         $this->x = gmp_init(hash('sha256', $this->salt . $P), 16);
@@ -29,7 +29,6 @@ class SimpleSRPServer extends SimpleSRP
     function setA(string $A)
     {
         $this->A = gmp_init($A, 16);
-
         $this->S = gmp_powm(gmp_mul($this->A, gmp_powm($this->v, $this->u, $this->N)), $this->b, $this->N);
     }
 

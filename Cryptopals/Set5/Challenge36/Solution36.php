@@ -4,20 +4,29 @@ namespace Cryptopals\Set5\Challenge36;
 
 use Cryptopals\Solution;
 
-class Solution36 extends Solution
+class Solution36 implements Solution
 {
+    protected $server;
+    protected $client;
+
+    function __construct(SRPServer $server, SRPClient $client)
+    {
+        $this->server = $server;
+        $this->client = $client;
+    }
+
     function execute(): bool
     {
         $I = 'email';
         $P = 'password';
 
-        $S = new SRPServer($I, $P);
-        $C = new SRPClient($I, $P);
+        $this->server->setCredentials($I, $P);
+        $this->client->setCredentials($I, $P);
 
-        $C->setSalt($S->getSalt());
-        $S->setA($C->getA());
-        $C->setB($S->getB());
+        $this->client->setSalt($this->server->getSalt());
+        $this->server->setA($this->client->getA());
+        $this->client->setB($this->server->getB());
 
-        return $S->getProof() === $C->getProof();
+        return $this->server->getProof() === $this->client->getProof();
     }
 }

@@ -2,12 +2,21 @@
 
 namespace Cryptopals\Set3\Challenge19;
 
-use AES\Key;
+use Cryptopals\Set1\Challenge7\RandomKey;
 use Cryptopals\Set3\Challenge18\AESCTR;
 use Cryptopals\Solution;
 
-class Solution19 extends Solution
+class Solution19 implements Solution
 {
+    protected $ctr;
+    protected $key;
+
+    function __construct(AESCTR $ctr, RandomKey $key)
+    {
+        $this->ctr = $ctr;
+        $this->key = $key;
+    }
+
     protected $plaintexts = [
         'SSBoYXZlIG1ldCB0aGVtIGF0IGNsb3NlIG9mIGRheQ==',
         'Q29taW5nIHdpdGggdml2aWQgZmFjZXM=',
@@ -51,14 +60,11 @@ class Solution19 extends Solution
         'QSB0ZXJyaWJsZSBiZWF1dHkgaXMgYm9ybi4=',
     ];
 
-    protected function execute(): bool
+    function execute(): bool
     {
-        $ctr = new AESCTR;
-        $key = new Key(random_bytes(16));
-
         $plaintexts = array_map('base64_decode', $this->plaintexts);
-        $ciphertexts = array_map(function ($pt) use ($ctr, $key) {
-            return $ctr->encrypt($key, str_repeat("\0", 8), $pt);
+        $ciphertexts = array_map(function ($pt) {
+            return $this->ctr->encrypt($this->key, str_repeat("\0", 8), $pt);
         }, $plaintexts);
 
         // "Attack this cryptosystem piecemeal: guess letters, use expected English language frequence to validate guesses, catch common English trigrams, and so on."

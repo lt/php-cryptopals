@@ -6,9 +6,9 @@ class SimpleSRPClient extends SimpleSRP
 {
     private $a;
 
-    function __construct(string $I, string $P)
+    function setCredentials(string $I, string $P)
     {
-        parent::__construct($I, $P);
+        parent::setCredentials($I, $P);
 
         $this->a = gmp_random();
         $this->A = gmp_strval(gmp_powm($this->g, $this->a, $this->N), 16);

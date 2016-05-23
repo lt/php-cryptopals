@@ -3,23 +3,20 @@
 namespace Cryptopals\Set2\Challenge12;
 
 use AES\ECB;
-use AES\Key;
-use Cryptopals\Set1\Challenge8\Solution8;
+use Cryptopals\Set1\Challenge7\RandomKey;
+use Cryptopals\Set1\Challenge8\DetectECB;
 use Cryptopals\Set2\Challenge9\PKCS7;
+use Cryptopals\Solution;
 
-class Solution12 extends Solution8
+class Solution12 implements Solution
 {
     protected $ecb;
     protected $key;
-    protected $pkcs7;
-
-    protected function setUp(): bool
+    
+    function __construct(ECB $ecb, RandomKey $key)
     {
-        $this->ecb = new ECB;
-        $this->key = new Key(random_bytes(16));
-        $this->pkcs7 = new PKCS7;
-
-        return true;
+        $this->ecb = $ecb;
+        $this->key = $key;
     }
 
     protected function oracle(string $myString): string
@@ -27,7 +24,7 @@ class Solution12 extends Solution8
         $unknownString = base64_decode('Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkgaGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBqdXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUgYnkK');
         $message = $myString . $unknownString;
 
-        return $this->ecb->encrypt($this->key, $this->pkcs7->pad($message));
+        return $this->ecb->encrypt($this->key, PKCS7::pad($message));
     }
 
     protected function detectBlockSize(): int
@@ -74,12 +71,12 @@ class Solution12 extends Solution8
         return $plaintext;
     }
 
-    protected function execute(): bool
+    function execute(): bool
     {
         $blockSize = $this->detectBlockSize();
         print "Block size: {$blockSize}\n";
 
-        $ecb = $this->repeatedBlockCount($this->oracle(str_repeat('a', 100))) > 0;
+        $ecb = DetectECB::repeatedBlockCount($this->oracle(str_repeat('a', 100))) > 0;
         print "ECB mode: ";
         print ($ecb ? "Yes\n" : "No...\n");
 

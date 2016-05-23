@@ -2,50 +2,18 @@
 
 namespace Cryptopals\Set2\Challenge16;
 
-use AES\CBC;
-use AES\Key;
-use Cryptopals\Set2\Challenge15\PKCS7;
 use Cryptopals\Solution;
 
-class Solution16 extends Solution
+class Solution16 implements Solution
 {
-    protected $cbc;
-    protected $key;
-    protected $iv;
-    protected $pkcs7;
+    protected $queryAPI;
 
-    protected function setUp(): bool
+    function __construct(QueryAPI $queryAPI)
     {
-        $this->cbc = new CBC;
-        $this->key = new Key(random_bytes(16));
-        $this->iv = random_bytes(16);
-        $this->pkcs7 = new PKCS7;
-
-        return true;
+        $this->queryAPI = $queryAPI;
     }
 
-    protected function getQuery(string $userData): string
-    {
-        $data = http_build_query(
-            [
-                'comment1' => 'cooking MCs',
-                'userdata' => $userData,
-                'comment2' => ' lke a pound of bacon'
-            ],
-            '', ';', PHP_QUERY_RFC3986
-        );
-
-        return $this->cbc->encrypt($this->key, $this->iv, $this->pkcs7->pad($data));
-    }
-
-    protected function isAdmin(string $query): bool
-    {
-        $data = $this->cbc->decrypt($this->key, $this->iv, $query);
-
-        return strpos($data, ';admin=true;') !== false;
-    }
-
-    protected function execute(): bool
+    function execute(): bool
     {
         // 0..............f|0..............f|0..............f|0..............f|0..............f
         // comment1=cooking|%20MCs;userdata=
@@ -61,9 +29,9 @@ class Solution16 extends Solution
         print "We want:       {$badData}\n";
         print 'Bit flip mask: ' . bin2hex($badBlock) . "\n";
 
-        $query = $this->getQuery($goodData);
-        $query = substr($query, 0, 32) . (substr($query, 32, 15) ^ $badBlock) . substr($query, 47);
+        $query = $this->queryAPI->getQuery($goodData);
+        $query = substr_replace($query, substr($query, 32) ^ $badBlock, 32, 15);
 
-        return $this->isAdmin($query);
+        return $this->queryAPI->isAdmin($query);
     }
 }

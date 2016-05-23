@@ -2,51 +2,18 @@
 
 namespace Cryptopals\Set2\Challenge13;
 
-use AES\ECB;
-use AES\Key;
-use Cryptopals\Set1\Challenge8\Solution8;
-use Cryptopals\Set2\Challenge9\PKCS7;
+use Cryptopals\Solution;
 
-class Solution13 extends Solution8
+class Solution13 implements Solution
 {
-    protected $ecb;
-    protected $key;
-    protected $pkcs7;
-
-    protected function setUp(): bool
+    protected $profileAPI;
+    
+    function __construct(ProfileAPI $profileAPI)
     {
-        $this->ecb = new ECB;
-        $this->key = new Key(random_bytes(16));
-        $this->pkcs7 = new PKCS7;
-
-        return true;
+        $this->profileAPI = $profileAPI;
     }
 
-    protected function profileFor(string $email): string
-    {
-        return http_build_query([
-            'email' => $email,
-            'uid' => 10,
-            'role' => 'user'
-        ]);
-    }
-
-    protected function encryptedProfileFor(string $email): string
-    {
-        $profile = $this->profileFor($email);
-
-        return $this->ecb->encrypt($this->key, $this->pkcs7->pad($profile));
-    }
-
-    protected function decryptedProfile(string $ciphertext): array
-    {
-        $decypted = $this->ecb->decrypt($this->key, $ciphertext);
-
-        parse_str($decypted, $profile);
-        return $profile;
-    }
-
-    protected function execute(): bool
+    function execute(): bool
     {
         // assuming we know the structure is email=&uid=&role=
         // 0..............f|0............
@@ -58,9 +25,9 @@ class Solution13 extends Solution8
         // ....f|0......
         // role=|user...
 
-        $lastLen = strlen($this->encryptedProfileFor('a'));
+        $lastLen = strlen($this->profileAPI->encryptedProfileFor('a'));
         for ($i = 2; $i <= 16; $i++) {
-            if ($lastLen !== strlen($this->encryptedProfileFor(str_repeat('a', $i)))) {
+            if ($lastLen !== strlen($this->profileAPI->encryptedProfileFor(str_repeat('a', $i)))) {
                 break;
             }
         }
@@ -69,8 +36,8 @@ class Solution13 extends Solution8
         print "Padding to chop role: $padToChopRole\n";
         print "Padding to align admin: $padToAlignEmail\n";
 
-        $adminInBlock2 = $this->encryptedProfileFor(str_repeat('a', $padToAlignEmail) . 'admin');
-        $roleInBlock3 = $this->encryptedProfileFor(str_repeat('a', $padToChopRole));
+        $adminInBlock2 = $this->profileAPI->encryptedProfileFor(str_repeat('a', $padToAlignEmail) . 'admin');
+        $roleInBlock3 = $this->profileAPI->encryptedProfileFor(str_repeat('a', $padToChopRole));
 
         // cut and paste
         // 0..............f|0..............f|0..............f
@@ -82,11 +49,7 @@ class Solution13 extends Solution8
         // email=aaaaaaaaaa|aaa&uid=10&role=|admin&uid=10&rol
         
         $bakedAuth = substr($roleInBlock3, 0, 32) . substr($adminInBlock2, 16, 16);
-        $decryptedProfile = $this->decryptedProfile($bakedAuth);
 
-        print "Decrypted profile:\n";
-        print_r($decryptedProfile);
-
-        return $decryptedProfile['role'] === 'admin';
+        return $this->profileAPI->isAdmin($bakedAuth);
     }
 }

@@ -4,21 +4,25 @@ namespace Cryptopals\Set5\Challenge33;
 
 use Cryptopals\Solution;
 
-class Solution33 extends Solution
+class Solution33 implements Solution
 {
-    protected function execute(): bool
+    protected $dh;
+
+    function __construct(DH $dh)
     {
-        $dh = new DH;
+        $this->dh = $dh;
+    }
 
-        $a = $dh->generatePrivate();
-        $b = $dh->generatePrivate();
+    function execute(): bool
+    {
+        $a = $this->dh->generatePrivate();
+        $b = $this->dh->generatePrivate();
 
-        $A = $dh->generatePublic($a);
-        $B = $dh->generatePublic($b);
+        $A = $this->dh->generatePublic($a);
+        $B = $this->dh->generatePublic($b);
 
-        $s = $dh->generateShared($a, $B);
-        $s2 = $dh->generateShared($b, $A);
-
+        $s = $this->dh->generateShared($a, $B);
+        $s2 = $this->dh->generateShared($b, $A);
 
         print "A and B shared secrets match:\n";
         print gmp_cmp($s, $s2) === 0 ? "Yes!\n\n" : "No :(\n\n";

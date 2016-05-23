@@ -2,9 +2,10 @@
 
 namespace Cryptopals\Set5\Challenge40;
 
-use Cryptopals\Set5\Challenge39\Solution39;
+use Cryptopals\Set5\Challenge39\RSA;
+use Cryptopals\Solution;
 
-class Solution40 extends Solution39
+class Solution40 implements Solution
 {
     protected function CRT(array $residues, array $moduli): \GMP
     {
@@ -22,19 +23,20 @@ class Solution40 extends Solution39
 
         return $x % $n;
     }
-    protected function execute(): bool
+
+    function execute(): bool
     {
         $e = gmp_init(3);
         $plaintext = gmp_init(0xcafebabe);
         printf("Plaintext: %x\n", $plaintext);
 
-        list(, , $public1) = $this->generatePQND(256, $e);
-        list(, , $public2) = $this->generatePQND(256, $e);
-        list(, , $public3) = $this->generatePQND(256, $e);
+        list(, , $public1) = RSA::generatePQND(256, $e);
+        list(, , $public2) = RSA::generatePQND(256, $e);
+        list(, , $public3) = RSA::generatePQND(256, $e);
 
-        $cipher1 = $this->encrypt($plaintext, $e, $public1);
-        $cipher2 = $this->encrypt($plaintext, $e, $public2);
-        $cipher3 = $this->encrypt($plaintext, $e, $public3);
+        $cipher1 = RSA::encrypt($plaintext, $e, $public1);
+        $cipher2 = RSA::encrypt($plaintext, $e, $public2);
+        $cipher3 = RSA::encrypt($plaintext, $e, $public3);
 
         $crt = $this->CRT([$cipher1, $cipher2, $cipher3], [$public1, $public2, $public3]);
         $decrypted = gmp_root($crt, 3);

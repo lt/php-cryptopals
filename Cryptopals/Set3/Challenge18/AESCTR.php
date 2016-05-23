@@ -2,16 +2,16 @@
 
 namespace Cryptopals\Set3\Challenge18;
 
+use AES\Cipher;
 use AES\Context\CTR\{
     Context,
     EncryptionContext,
     DecryptionContext
 };
-use AES\CTR;
 use AES\Exception\IVLengthException;
 use AES\Key;
 
-class AESCTR extends CTR
+class AESCTR extends Cipher
 {
     private function init(Context $context, Key $key, string $nonce)
     {
@@ -21,20 +21,6 @@ class AESCTR extends CTR
 
         $context->key = $key;
         $context->nonce = [unpack('P', $nonce)[1], 0];
-    }
-
-    function initEncryption(Key $key, string $nonce): EncryptionContext
-    {
-        $context = new EncryptionContext;
-        $this->init($context, $key, $nonce);
-        return $context;
-    }
-
-    function initDecryption(Key $key, string $nonce): DecryptionContext
-    {
-        $context = new DecryptionContext;
-        $this->init($context, $key, $nonce);
-        return $context;
     }
 
     private function transcrypt(Context $context, string $message): string
@@ -57,13 +43,17 @@ class AESCTR extends CTR
         return $message ^ $keyStream;
     }
 
-    function streamEncrypt(EncryptionContext $ctx, string $message): string
+    function encrypt(Key $key, string $nonce, string $message): string
     {
-        return $this->transcrypt($ctx, $message);
+        $context = new EncryptionContext;
+        $this->init($context, $key, $nonce);
+        return $this->transcrypt($context, $message);
     }
 
-    function streamDecrypt(DecryptionContext $ctx, string $message): string
+    function decrypt(Key $key, string $nonce, string $message): string
     {
-        return $this->transcrypt($ctx, $message);
+        $context = new DecryptionContext;
+        $this->init($context, $key, $nonce);
+        return $this->transcrypt($context, $message);
     }
 }

@@ -11,7 +11,7 @@ namespace Cryptopals\Set1\Challenge2;
 
 use Cryptopals\Solution;
 
-class Solution2 extends Solution
+class Solution2 implements Solution
 {
     protected function fixedXOR(string $a, string $b): string
     {
@@ -27,7 +27,7 @@ class Solution2 extends Solution
         return $output;
     }
 
-    protected function execute(): bool
+    function execute(): bool
     {
         $inputOne = hex2bin('1c0111001f010100061a024b53535009181c');
         $inputTwo = hex2bin('686974207468652062756c6c277320657965');

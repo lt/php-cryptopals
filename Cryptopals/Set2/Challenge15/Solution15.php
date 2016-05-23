@@ -4,16 +4,15 @@ namespace Cryptopals\Set2\Challenge15;
 
 use Cryptopals\Solution;
 
-class Solution15 extends Solution
+class Solution15 implements Solution
 {
-    protected function execute(): bool
+    function execute(): bool
     {
-        $pkcs7 = new PKCS7;
         $success = true;
 
         print 'Testing \'ICE ICE BABY\x04\x04\x04\x04\' has pad length of 4: ';
         try {
-            $success = $success && ($pkcs7->getPaddingLength("ICE ICE BABY\x04\x04\x04\x04") === 4);
+            $success = $success && (PKCS7::getPaddingLength("ICE ICE BABY\x04\x04\x04\x04") === 4);
             print "OK\n";
         }
         catch (\Exception $e) {
@@ -23,7 +22,7 @@ class Solution15 extends Solution
 
         print 'Testing \'ICE ICE BABY\x05\x05\x05\x05\' is invalid: ';
         try {
-            $pkcs7->depad("ICE ICE BABY\x05\x05\x05\x05");
+            PKCS7::depad("ICE ICE BABY\x05\x05\x05\x05");
             $success = false;
             print "FAIL\n";
         }
@@ -34,7 +33,7 @@ class Solution15 extends Solution
 
         print 'Testing \'ICE ICE BABY\x01\x02\x03\x04\' is invalid: ';
         try {
-            $pkcs7->depad("ICE ICE BABY\x01\x02\x03\x04");
+            PKCS7::depad("ICE ICE BABY\x01\x02\x03\x04");
             $success = false;
             print "FAIL\n";
         }

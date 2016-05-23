@@ -3,32 +3,26 @@
 namespace Cryptopals\Set5\Challenge34;
 
 use AES\CBC;
-use AES\Key;
-use Cryptopals\Set2\Challenge15\PKCS7;
 use Cryptopals\Set5\Challenge33\DH;
 use Cryptopals\Solution;
 
-class Solution34 extends Solution
+class Solution34 implements Solution
 {
+    protected $dh;
     protected $cbc;
-    protected $pkcs7;
 
-    protected function setUp(): bool
+    function __construct(CBC $cbc, DH $dh)
     {
-        $this->cbc = new CBC;
-        $this->pkcs7 = new PKCS7;
-
-        return true;
+        $this->dh = $dh;
+        $this->cbc = $cbc;
     }
 
-    protected function execute(): bool
+    function execute(): bool
     {
-        $dh = new DH();
-
         print "Testing normal comms:\n\n";
 
-        $A = new ConversationEntity('A', $dh);
-        $B = new ConversationEntity('B', $dh);
+        $A = new ConversationEntity('A', $this->dh, $this->cbc);
+        $B = new ConversationEntity('B', $this->dh, $this->cbc);
 
         $A->onSend = [$B, 'receive'];
         $B->onSend = [$A, 'receive'];
@@ -39,56 +33,16 @@ class Solution34 extends Solution
 
         print "\nSetting up MITM:\n\n";
 
-        $state = 0;
-        $stolenP = null;
-        $evilShared = null;
+        $A = new ConversationEntity('A', $this->dh, $this->cbc);
+        $B = new ConversationEntity('B', $this->dh, $this->cbc);
+        $M = new MITM($this->dh, $this->cbc, $A, $B);
 
-        $A = new ConversationEntity('A', $dh);
-        $B = new ConversationEntity('B', $dh);
-
-        $A->onSend = function($data) use ($B, &$state, &$stolenP, &$evilShared, $dh) {
-            if ($state === 0) {
-                print "M: Manipulating kex req\n";
-
-                $obj = json_decode($data);
-                $obj->A = $obj->p;
-
-                $stolenP = gmp_init($obj->p, 16);
-                $evilShared = gmp_strval($dh->generateShared($stolenP, $stolenP), 16);
-
-                $state = 1;
-                $B->receive(json_encode($obj));
-            }
-            else {
-                $key = new Key(substr(sha1($evilShared, true), 0, 16));
-                $iv = substr($data, 0, 16);
-
-                $message = $this->cbc->decrypt($key, $iv, substr($data, 16));
-                $message = $this->pkcs7->depad($message);
-
-                print "M: sniffed: $message\n";
-            }
+        $A->onSend = function(string $data) use($M, $B) {
+            $M->sniffA($data, $B);
         };
 
-        $B->onSend = function($data) use ($A, &$state, &$stolenP, &$evilShared) {
-            if ($state === 1) {
-                print "M: Manipulating kex resp\n";
-
-                $obj = json_decode($data);
-                $obj->B = gmp_strval($stolenP, 16);
-
-                $state = 2;
-                $A->receive(json_encode($obj));
-            }
-            else {
-                $key = new Key(substr(sha1($evilShared, true), 0, 16));
-                $iv = substr($data, 0, 16);
-
-                $message = $this->cbc->decrypt($key, $iv, substr($data, 16));
-                $message = $this->pkcs7->depad($message);
-
-                print "M: sniffed: $message\n";
-            }
+        $B->onSend = function(string $data) use($M, $A) {
+            $M->sniffB($data, $A);
         };
 
         $A->kexRequest();

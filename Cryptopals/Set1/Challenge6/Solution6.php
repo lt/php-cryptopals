@@ -2,67 +2,16 @@
 
 namespace Cryptopals\Set1\Challenge6;
 
-use Cryptopals\Set1\Challenge4\Solution4;
+use Cryptopals\Set1\Challenge4\DetectSingleByteXOR;
+use Cryptopals\Solution;
 
-class Solution6 extends Solution4
+class Solution6 implements Solution
 {
-    // popcount the diff (xor) bits between two strings
-    protected function hammingDistance(string $one, string $two): int
-    {
-        $count = 0;
-
-        foreach (unpack('C*', $one ^ $two) as $diff) {
-            while ($diff) {
-                $diff &= $diff - 1;
-                $count++;
-            }
-        }
-
-        return $count;
-    }
-
-    protected function scoreKeyLengths(string $data, int $lowKeySize, int $highKeySize): array
-    {
-        $scores = [];
-
-        for($keyLen = $lowKeySize; $keyLen <= $highKeySize; $keyLen++) {
-            $samples = 0;
-            $summedDistance = 0;
-
-            $chunks = str_split($data, $keyLen);
-            $chunkCount = count($chunks);
-            for ($a = 0; $a < $chunkCount; $a++) {
-                for ($b = $a + 1; $b < $chunkCount; $b++) {
-                    $summedDistance += $this->hammingDistance($chunks[$a], $chunks[$b]);
-                    $samples++;
-                }
-            }
-
-            // Average distance per character across all samples
-            $scores[$keyLen] = $summedDistance / $keyLen / $samples;
-        }
-
-        return $scores;
-    }
-
-    protected function transposeBlocks(array $blocks): array
-    {
-        $matrix = array_map('str_split', $blocks);
-        $iterations = count($matrix[0]);
-        $newBlocks = [];
-
-        for ($i = 0; $i < $iterations; $i++) {
-            $newBlocks[] = array_column($matrix, $i);
-        }
-
-        return array_map('implode', $newBlocks);
-    }
-
-    protected function execute(): bool
+    function execute(): bool
     {
         $data = base64_decode(file_get_contents(__DIR__ . '/6.txt'));
 
-        $scores = $this->scoreKeyLengths($data, 2, 40);
+        $scores = RepeatingKeyXORScore::scoreKeyLengths($data, 2, 40);
         asort($scores);
 
         $limit = 5;
@@ -72,9 +21,9 @@ class Solution6 extends Solution4
         $i = 0;
         foreach ($scores as $k => $v) {
             $blocks = str_split($data, $k);
-            $blocks = $this->transposeBlocks($blocks);
+            $blocks = RepeatingKeyXORScore::transposeBlocks($blocks);
 
-            list($topScores, $topChars) = $this->scoreSingleByteXORStrings($blocks);
+            list($topScores, $topChars) = DetectSingleByteXOR::find($blocks);
             printf("%4u | %5.3f | %s\n", $k, $v, pack('C*', ...$topChars));
 
             if (++$i === $limit) {

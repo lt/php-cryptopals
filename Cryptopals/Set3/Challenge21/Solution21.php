@@ -5,24 +5,30 @@ namespace Cryptopals\Set3\Challenge21;
 use Cryptopals\Solution;
 use MersenneTwister\MT;
 
-class Solution21 extends Solution
+class Solution21 implements Solution
 {
-    protected function execute(): bool
+    protected $mt;
+    
+    function __construct(MT $mt)
     {
-        $mt = new MT;
+        $this->mt = $mt;
+    }
+
+    function execute(): bool
+    {
         $success = 1;
 
-        $mt->init(12345678);
+        $this->mt->init(12345678);
 
-        $rand = $mt->int32();
+        $rand = $this->mt->int32();
         print "$rand\n";
         $success &= ($rand === 1055721139);
 
-        $rand = $mt->int32();
+        $rand = $this->mt->int32();
         print "$rand\n";
         $success &= ($rand === 3422054626);
 
-        $rand = $mt->int32();
+        $rand = $this->mt->int32();
         print "$rand\n";
         $success &= ($rand === 2561641375);
 

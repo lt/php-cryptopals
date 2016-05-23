@@ -2,44 +2,18 @@
 
 namespace Cryptopals\Set4\Challenge26;
 
-use AES\Key;
-use Cryptopals\Set3\Challenge18\AESCTR;
 use Cryptopals\Solution;
 
-class Solution26 extends Solution
+class Solution26 implements Solution
 {
-    protected $ctr;
-    protected $key;
-    
-    protected function setUp(): bool
+    protected $queryAPI;
+
+    function __construct(QueryAPI $queryAPI)
     {
-        $this->ctr = new AESCTR;
-        $this->key = new Key(random_bytes(16));
-        return true;
+        $this->queryAPI = $queryAPI;
     }
 
-    protected function getQuery(string $userData): string
-    {
-        $data = http_build_query(
-            [
-                'comment1' => 'cooking MCs',
-                'userdata' => $userData,
-                'comment2' => ' lke a pound of bacon'
-            ],
-            '', ';', PHP_QUERY_RFC3986
-        );
-
-        return $this->ctr->encrypt($this->key, str_repeat("\0", 8), $data);
-    }
-
-    protected function isAdmin(string $query): bool
-    {
-        $data = $this->ctr->decrypt($this->key, str_repeat("\0", 8), $query);
-
-        return strpos($data, ';admin=true;') !== false;
-    }
-
-    protected function execute(): bool
+    function execute(): bool
     {
         // 0..............f|0..............f|0..............f|0..............f|0..............f
         // comment1=cooking|%20MCs;userdata=
@@ -54,10 +28,10 @@ class Solution26 extends Solution
         print "We want:       {$badData}\n";
         print 'Bit flip mask: ' . bin2hex($badBlock) . "\n";
 
-        $query = $this->getQuery($goodData);
+        $query = $this->queryAPI->getQuery($goodData);
 
         $query = substr($query, 0, 32) . (substr($query, 32, 15) ^ $badBlock) . substr($query, 47);
 
-        return $this->isAdmin($query);
+        return $this->queryAPI->isAdmin($query);
     }
 }

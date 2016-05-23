@@ -2,31 +2,16 @@
 
 namespace Cryptopals\Set1\Challenge4;
 
-use Cryptopals\Set1\Challenge3\Solution3;
+use Cryptopals\Solution;
 
-class Solution4 extends Solution3
+class Solution4 implements Solution
 {
-    protected function scoreSingleByteXORStrings(array $strings): array
-    {
-        $topScores = [];
-        $topChars = [];
-
-        foreach ($strings as $stringIndex => $string) {
-            $scores = $this->scoreSingleByteXORs($string);
-            arsort($scores);
-            $topScores[$stringIndex] = current($scores);
-            $topChars[$stringIndex] = key($scores);
-        }
-
-        return [$topScores, $topChars];
-    }
-
-    protected function execute(): bool
+    function execute(): bool
     {
         $inputs = file(__DIR__ . '/4.txt', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
         $inputs = array_map('hex2bin', $inputs);
 
-        list($topScores, $topChars) = $this->scoreSingleByteXORStrings($inputs);
+        list($topScores, $topChars) = DetectSingleByteXOR::find($inputs);
         arsort($topScores);
 
         $limit = 5;

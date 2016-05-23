@@ -5,7 +5,7 @@ namespace Cryptopals\Set3\Challenge24;
 use Cryptopals\Solution;
 use MersenneTwister\MT;
 
-class Solution24 extends Solution
+class Solution24 implements Solution
 {
     function encrypt($data, $seed = 0)
     {
@@ -30,7 +30,7 @@ class Solution24 extends Solution
         return $this->encrypt(random_bytes(mt_rand(1,20)) . $data, $seed);
     }
 
-    protected function execute(): bool
+    function execute(): bool
     {
         $plaintext = 'the matasano crypto challenges';
         $sanity = $this->encrypt($this->encrypt($plaintext)) === $plaintext;

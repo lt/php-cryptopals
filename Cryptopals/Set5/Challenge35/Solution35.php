@@ -28,19 +28,26 @@
 
 namespace Cryptopals\Set5\Challenge35;
 
+use AES\CBC;
 use Cryptopals\Set5\Challenge33\DH;
 use Cryptopals\Solution;
 
-class Solution35 extends Solution
+class Solution35 implements Solution
 {
-    protected function execute(): bool
+    protected $cbc;
+
+    function __construct(CBC $cbc)
+    {
+        $this->cbc = $cbc;
+    }
+
+    function execute(): bool
     {
         print "Testing normal comms:\n\n";
 
         $A = new ConversationEntity('A', new DH);
         $B = new ConversationEntity('B', new DH);
-
-        $M = new MITM($A, $B);
+        $M = new MITM($this->cbc, $A, $B);
 
         $A->groupNeg();
         $A->send('Hello there!');
@@ -50,8 +57,7 @@ class Solution35 extends Solution
 
         $A = new ConversationEntity('A', new DH);
         $B = new ConversationEntity('B', new DH);
-
-        $M = new MITM1($A, $B);
+        $M = new MITM1($this->cbc, $A, $B);
 
         $A->groupNeg();
         $A->send('Hello there!');
@@ -61,8 +67,7 @@ class Solution35 extends Solution
 
         $A = new ConversationEntity('A', new DH);
         $B = new ConversationEntity('B', new DH);
-
-        $M = new MITMP($A, $B);
+        $M = new MITMP($this->cbc, $A, $B);
 
         $A->groupNeg();
         $A->send('Hello there!');
@@ -72,8 +77,7 @@ class Solution35 extends Solution
 
         $A = new ConversationEntity('A', new DH);
         $B = new ConversationEntity('B', new DH);
-
-        $M = new MITMPminus1($A, $B);
+        $M = new MITMPminus1($this->cbc, $A, $B);
 
         $A->groupNeg();
         $A->send('Hello there!');

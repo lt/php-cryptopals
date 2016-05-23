@@ -21,13 +21,11 @@ class ConversationEntity
     protected $cbc;
     protected $pkcs7;
 
-    function __construct(string $name, DH $dh)
+    function __construct(string $name, DH $dh, CBC $cbc)
     {
         $this->name = $name;
         $this->dh = $dh;
-
-        $this->cbc = new CBC;
-        $this->pkcs7 = new PKCS7;
+        $this->cbc = $cbc;
 
         $this->priv = $dh->generatePrivate();
         $this->pub = $dh->generatePublic($this->priv);
@@ -46,7 +44,7 @@ class ConversationEntity
         $func(json_encode($obj));
     }
 
-    function kexResponse($data)
+    function kexResponse(string $data)
     {
         $obj = json_decode($data);
         // we can ignore p and g for now, since we use the same DH implementation. Normally we'd have to do "stuff"
@@ -66,12 +64,12 @@ class ConversationEntity
         }
     }
 
-    function send($data)
+    function send(string $data)
     {
         $key = new Key(substr(sha1($this->shared, true), 0, 16));
         $iv = random_bytes(16);
 
-        $message = $iv . $this->cbc->encrypt($key, $iv, $this->pkcs7->pad($data));
+        $message = $iv . $this->cbc->encrypt($key, $iv, PKCS7::pad($data));
 
         print "{$this->name}: sending: $data\n";
 
@@ -79,7 +77,7 @@ class ConversationEntity
         $func($message);
     }
 
-    function receive($data)
+    function receive(string $data)
     {
         if (!$this->shared) {
             $this->kexResponse($data);
@@ -90,8 +88,7 @@ class ConversationEntity
         $iv = substr($data, 0, 16);
 
         $message = $this->cbc->decrypt($key, $iv, substr($data, 16));
-        $message = $this->pkcs7->depad($message);
-
+        $message = PKCS7::depad($message);
 
         print "{$this->name} received: $message\n";
     }

@@ -3,6 +3,7 @@
 namespace Cryptopals\Set5\Challenge35;
 
 use AES\Key;
+use Cryptopals\Set2\Challenge15\PKCS7;
 
 class MITMP extends MITM
 {
@@ -25,7 +26,7 @@ class MITMP extends MITM
             $iv = substr($data, 0, 16);
 
             $message = $this->cbc->decrypt($key, $iv, substr($data, 16));
-            $message = $this->pkcs7->depad($message);
+            $message = PKCS7::depad($message);
             print "M: sniffed: $message\n";
         }
         

@@ -2,32 +2,24 @@
 
 namespace Cryptopals\Set4\Challenge32;
 
-use Cryptopals\Set4\Challenge31\Solution31;
+use Cryptopals\Solution;
 
-class Solution32 extends Solution31
+class Solution32 implements Solution
 {
-    protected function insecureCompare(string $one, string $two): bool
-    {
-        $three = unpack('C*', $one ^ $two);
-        foreach ($three as $k => $v) {
-            if ($v) {
-                usleep(5000 * $k);
-                return false;
-            }
-        }
+    protected $messageAPI;
 
-        return true;
+    function __construct(MessageAPI $messageAPI)
+    {
+        $this->messageAPI = $messageAPI;
     }
 
-    protected function execute(): bool
+    function execute(): bool
     {
         // attacker has a file but not the key to generate valid signature
-
         $file = 'my evil file';
         $crackedSig = str_repeat("\0", 20);
 
         print "This will take an even longer while.\n\n";
-        print bin2hex($this->apiSign($file)) . "\n\n";
 
         for ($x = 0; $x < 20; $x++) {
             $timings = [];
@@ -37,7 +29,7 @@ class Solution32 extends Solution31
 
                 for ($samples = 0; $samples < 10; $samples++) {
                     $start = microtime(true);
-                    if ($this->apiVerify($file, $crackedSig) === 500) {
+                    if ($this->messageAPI->verify($file, $crackedSig) === 500) {
                         $stop = microtime(true) - $start;
                         if (isset($timings[$i])) {
                             $timings[$i] += $stop;
@@ -59,7 +51,7 @@ class Solution32 extends Solution31
         }
 
         print "\nActual signature:\n";
-        print bin2hex($this->apiSign($file)) . "\n";
-        return $this->apiVerify($file, $crackedSig) === 200;
+        print bin2hex($this->messageAPI->sign($file)) . "\n";
+        return $this->messageAPI->verify($file, $crackedSig) === 200;
     }
 }

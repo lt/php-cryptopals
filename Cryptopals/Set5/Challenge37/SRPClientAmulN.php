@@ -6,10 +6,8 @@ use Cryptopals\Set5\Challenge36\SRPClient;
 
 class SRPClientAmulN extends SRPClient
 {
-    function __construct(string $I, string $P, int $mul)
+    function setMul(int $mul)
     {
-        parent::__construct($I, $P);
-
         $this->A = gmp_strval(gmp_mul($this->N, $mul), 16);
     }
 
@@ -23,4 +21,3 @@ class SRPClientAmulN extends SRPClient
         return hash_hmac('sha256', $this->getK(), $this->salt);
     }
 }
-

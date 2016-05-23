@@ -2,12 +2,23 @@
 
 namespace Cryptopals\Set3\Challenge20;
 
-use AES\Key;
-use Cryptopals\Set1\Challenge6\Solution6;
+use Cryptopals\Set1\Challenge3\SingleByteXORScore;
+use Cryptopals\Set1\Challenge6\RepeatingKeyXORScore;
+use Cryptopals\Set1\Challenge7\RandomKey;
 use Cryptopals\Set3\Challenge18\AESCTR;
+use Cryptopals\Solution;
 
-class Solution20 extends Solution6
+class Solution20 implements Solution
 {
+    protected $ctr;
+    protected $key;
+    
+    function __construct(AESCTR $ctr, RandomKey $key)
+    {
+        $this->ctr = $ctr;
+        $this->key = $key;
+    }
+
     protected function scoreSingleByteXORStrings(array $strings): array
     {
         $topScores = [];
@@ -16,7 +27,7 @@ class Solution20 extends Solution6
         $first = true;
 
         foreach ($strings as $stringIndex => $string) {
-            $scores = $this->scoreSingleByteXORs($string, $first ? self::FREQ_START_EN : self::FREQ_EN);
+            $scores = SingleByteXORScore::score($string, $first ? RepeatingKeyXORScore::FREQ_START_EN : RepeatingKeyXORScore::FREQ_EN);
             arsort($scores);
             $topScores[$stringIndex] = current($scores);
             $topChars[$stringIndex] = key($scores);
@@ -26,14 +37,11 @@ class Solution20 extends Solution6
         return [$topScores, $topChars];
     }
 
-    protected function execute(): bool
+    function execute(): bool
     {
-        $ctr = new AESCTR;
-        $key = new Key(random_bytes(16));
-
         $plaintexts = array_map('base64_decode', file(__DIR__ . '/20.txt', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES));
-        $ciphertexts = array_map(function ($pt) use ($ctr, $key) {
-            return $ctr->encrypt($key, str_repeat("\0", 8), $pt);
+        $ciphertexts = array_map(function ($pt) {
+            return $this->ctr->encrypt($this->key, str_repeat("\0", 8), $pt);
         }, $plaintexts);
 
         // challenge text says use a common length, but we can recover more if we don't
@@ -48,9 +56,9 @@ class Solution20 extends Solution6
 
         print "\nSolving keys based on English Language scoring:\n";
 
-        $blocks = $this->transposeBlocks($ciphertexts);
+        $blocks = RepeatingKeyXORScore::transposeBlocks($ciphertexts);
 
-        list($topScores, $topChars) = $this->scoreSingleByteXORStrings($blocks, self::FREQ_START_EN);
+        list($topScores, $topChars) = $this->scoreSingleByteXORStrings($blocks);
 
         $potentialKey = pack('C*', ...$topChars);
 

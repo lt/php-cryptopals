@@ -3,6 +3,9 @@
 
 namespace Cryptopals;
 
+use Auryn\InjectionException;
+use Auryn\Injector;
+
 require 'vendor/autoload.php';
 
 if ($argc < 2) {
@@ -85,21 +88,25 @@ $setId = ceil($challengeId / 8);
 $challengeName = $challenges[$challengeId] ?? null;
 $setName = $sets[$setId] ?? null;
 
+$injector = new Injector();
 $solutionClass = "\\Cryptopals\\Set{$setId}\\Challenge{$challengeId}\\Solution{$challengeId}";
 
-if (!$setName || !$challengeName || !class_exists($solutionClass)) {
-    print "Invalid challenge id {$challengeId}\n";
+try {
+    /** @var \Cryptopals\Solution $solution */
+    $solution = $injector->make($solutionClass);
+}
+catch (InjectionException $e) {
+    print "Could not instantiate solution for Challenge {$challengeId}\n";
+    $message = $e->getMessage();
+    print "{$message}\n";
     exit(1);
 }
 
-/** @var \Cryptopals\Solution $solution */
-$solution = new $solutionClass;
-
 print "Set {$setId}: {$setName}\n";
 print "Challenge {$challengeId}: {$challengeName}\n";
-print str_repeat('-', 80) . "\n";
+print str_repeat('#', 80) . "\n";
 
-$result = $solution->runSolution();
+$result = $solution->execute();
 
-print str_repeat('-', 80) . "\n";
+print str_repeat('#', 80) . "\n";
 print ($result ? 'Success' : 'Failure') . "\n";
