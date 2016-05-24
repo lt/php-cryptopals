@@ -6,9 +6,17 @@ class RSA
 {
     static function generatePQND(int $bits, \GMP $e): array
     {
+        $bytes = $bits >> 3;
+
         do {
-            $p = gmp_nextprime(gmp_random_bits($bits));
-            $q = gmp_nextprime(gmp_random_bits($bits));
+            do {
+                $p = gmp_nextprime(gmp_random_bits($bits));
+                $q = gmp_nextprime(gmp_random_bits($bits));
+            } while (
+                $p == $q ||
+                strlen(gmp_export($p)) > $bytes ||
+                strlen(gmp_export($q)) > $bytes
+            );
 
             $d = gmp_invert($e, ($p - 1) * ($q - 1));
         } while (
