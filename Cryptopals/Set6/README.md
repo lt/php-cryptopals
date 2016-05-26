@@ -7,11 +7,11 @@ This set is **hard**. The concepts are again new. The attacks involve some math 
 
 But **they're worth it**. Two of these attacks in particular are among the most valuable in real-world cryptography.
 
-- [ ] 41. Implement unpadded message recovery oracle
-- [ ] 42. Bleichenbacher's e=3 RSA Attack
-- [ ] 43. DSA key recovery from nonce
-- [ ] 44. DSA nonce recovery from repeated nonce
-- [ ] 45. DSA parameter tampering
-- [ ] 46. RSA parity oracle
+- [x] 41. Implement unpadded message recovery oracle
+- [x] 42. Bleichenbacher's e=3 RSA Attack
+- [x] 43. DSA key recovery from nonce
+- [x] 44. DSA nonce recovery from repeated nonce
+- [x] 45. DSA parameter tampering
+- [x] 46. RSA parity oracle
 - [ ] 47. Bleichenbacher's PKCS 1.5 Padding Oracle (Simple Case)
 - [ ] 48. Bleichenbacher's PKCS 1.5 Padding Oracle (Complete Case)

@@ -44,7 +44,7 @@ Progress:
   - [x] 30. Break an MD4 keyed MAC using length extension
   - [x] 31. Implement and break HMAC-SHA1 with an artificial timing leak
   - [x] 32. Break HMAC-SHA1 with a slightly less artificial timing leak
-- [ ] **Set 5: Diffie-Hellman and friends**
+- [x] **Set 5: Diffie-Hellman and friends**
   - [x] 33. Implement Diffie-Hellman
   - [x] 34. Implement a MITM key-fixing attack on Diffie-Hellman with parameter injection
   - [x] 35. Implement DH with negotiated groups, and break with malicious "g" parameters
@@ -54,12 +54,12 @@ Progress:
   - [x] 39. Implement RSA
   - [x] 40. Implement an E=3 RSA Broadcast attack
 - [ ] **Set 6: RSA and DSA**
-  - [ ] 41. Implement unpadded message recovery oracle
-  - [ ] 42. Bleichenbacher's e=3 RSA Attack
-  - [ ] 43. DSA key recovery from nonce
-  - [ ] 44. DSA nonce recovery from repeated nonce
-  - [ ] 45. DSA parameter tampering
-  - [ ] 46. RSA parity oracle
+  - [x] 41. Implement unpadded message recovery oracle
+  - [x] 42. Bleichenbacher's e=3 RSA Attack
+  - [x] 43. DSA key recovery from nonce
+  - [x] 44. DSA nonce recovery from repeated nonce
+  - [x] 45. DSA parameter tampering
+  - [x] 46. RSA parity oracle
   - [ ] 47. Bleichenbacher's PKCS 1.5 Padding Oracle (Simple Case)
   - [ ] 48. Bleichenbacher's PKCS 1.5 Padding Oracle (Complete Case)
 - [ ] **Set 7: Hashes**
