@@ -63,9 +63,9 @@ Progress:
   - [ ] 47. Bleichenbacher's PKCS 1.5 Padding Oracle (Simple Case)
   - [ ] 48. Bleichenbacher's PKCS 1.5 Padding Oracle (Complete Case)
 - [ ] **Set 7: Hashes**
-  - [ ] 49. CBC-MAC Message Forgery
-  - [ ] 50. Hashing with CBC-MAC
-  - [ ] 51. Compression Ratio Side-Channel Attacks
+  - [x] 49. CBC-MAC Message Forgery
+  - [x] 50. Hashing with CBC-MAC
+  - [x] 51. Compression Ratio Side-Channel Attacks
   - [ ] 52. Iterated Hash Function Multicollisions
   - [ ] 53. Kelsey and Schneier's Expandable Messages
   - [ ] 54. Kelsey and Kohno's Nostradamus Attack

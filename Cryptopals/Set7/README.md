@@ -5,9 +5,9 @@ Unlike the last few sets, **this set is a hodge-podge**. It also includes some o
 
 This set is **hard**. There's a significant amount of programming, and Wang's attack in particular is as difficult as anything we've done.
 
-- [ ] 49. CBC-MAC Message Forgery
-- [ ] 50. Hashing with CBC-MAC
-- [ ] 51. Compression Ratio Side-Channel Attacks
+- [x] 49. CBC-MAC Message Forgery
+- [x] 50. Hashing with CBC-MAC
+- [x] 51. Compression Ratio Side-Channel Attacks
 - [ ] 52. Iterated Hash Function Multicollisions
 - [ ] 53. Kelsey and Schneier's Expandable Messages
 - [ ] 54. Kelsey and Kohno's Nostradamus Attack
